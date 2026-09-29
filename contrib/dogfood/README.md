@@ -47,10 +47,10 @@ so upstream PRs remain independently reviewable.
 ## Native Enzyme.jl
 
 The opt-in project also pins Enzyme.jl and its bundled EnzymeCore to the exact
-Enzyme.jl source commit in `stack.json`. Its tuple-field repair is part of the
-candidate. It was tested separately on Julia 1.10 and 1.12, but the current
-integration with upstream main has not been retested. Its known quadratic
-dominance calculation must be replaced and revalidated before promotion.
+Enzyme.jl source commit in `stack.json`. Its tuple-field repair, draft
+EnzymeAD/Enzyme.jl#3717, is part of the candidate, including the revision that
+computes dominance with LLVM's dominator tree. Rerun the repair's tests on the
+integrated commit after every refresh, on Julia 1.10 and 1.12.
 
 Enzyme.jl uses the native library from Enzyme_jll; it does not use Reactant's
 `libReactantExtra.so`. Start with the repair's tested Enzyme_jll 0.0.298+0 and

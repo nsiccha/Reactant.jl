@@ -53,15 +53,14 @@
       "fork_url": "https://github.com/nsiccha/Enzyme.jl.git",
       "inputs": [
         {
-          "branch": "pkpd-tuple-field-narrowing-20260929",
-          "commit": "4316bfe03e8f289ea8700039bd4dfaa524a9f89b",
-          "source": "Unpublished reviewed topic, imported from its exact bundle/object ref"
+          "branch": "pkpd-tuple-field-narrowing-20260930",
+          "commit": "0ba692520159866861edb1bdf5cae75329f8765c",
+          "source": "Head of draft EnzymeAD/Enzyme.jl#3717; contains 4316bfe03e8f289ea8700039bd4dfaa524a9f89b"
         }
       ],
-      "commit": "e5356c835c4f8213b18945c612b9b81a10591afe",
-      "tree": "8378bc0721b1107ad0cb9ded834bc8aab6ac52b0",
-      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra",
-      "promotion_blocker": "Known quadratic dominance calculation in tuple-field pass. Replace with LLVM.DomTree and rerun cross-version tests before promotion."
+      "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+      "tree": "400df7b1b92de3a45a9a37161adaa1dff466e28e",
+      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra"
     }
   },
   "excluded": [
