@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "purpose": "Opt-in RK development and representative workloads; ordinary consumers remain on upstream releases.",
+  "repositories": {
+    "Enzyme": {
+      "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
+      "upstream_main": "d342169d9d82ccccd27a13d6cde16e95ea341cde",
+      "fork_url": "https://github.com/nsiccha/Enzyme.git",
+      "inputs": [
+        {
+          "branch": "pr/custom-rules",
+          "commit": "e7ea87baeb949077ace561234538bfa08e9ee975"
+        }
+      ],
+      "commit": "1c9c1022b81e54d7960e0dfa5bd2f059113d5385",
+      "tree": "42735212137b6be71c6819dec4269bec67c0d55e"
+    },
+    "Enzyme-JAX": {
+      "upstream_url": "https://github.com/EnzymeAD/Enzyme-JAX.git",
+      "upstream_main": "f7bc2ce2b44293144c2040bc84d51f38eef98380",
+      "fork_url": "https://github.com/nsiccha/Enzyme-JAX.git",
+      "inputs": [
+        {
+          "branch": "enzymexla-linalg-svd-derivatives",
+          "commit": "6759ed4ca4606b96be71a976f10d3e0a139c4779"
+        },
+        {
+          "branch": "complex-zero-constant-folds",
+          "commit": "104e8868c83b9c3636385b568b057bdffc1f0f3e"
+        }
+      ],
+      "commit": "4d5bd94821c28208b687d0e88a2b6d892813a5ca",
+      "tree": "668298ce94de2eec45dc8ba2018289da1417a69f"
+    },
+    "Reactant.jl": {
+      "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
+      "upstream_main": "dd4809b0de9d55d7237c61c97ddb3ef615b6a924",
+      "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
+      "inputs": [
+        {
+          "branch": "pkpd-view-conversion-20260929",
+          "commit": "69797a668e029b31ab474a72fde4ee105623f780"
+        },
+        {
+          "branch": "pkpd-trace-index-sentinels-20260929",
+          "commit": "fbb11023c774bdef1c8e462158ef4ca71b36d9bb"
+        }
+      ]
+    }
+  },
+  "excluded": [
+    {
+      "change": "Table-based Cholesky/solve alternative",
+      "reason": "Mutually exclusive with the selected C++ implementations; compare in a separate candidate."
+    },
+    {
+      "change": "Old RK13/RK16 correctness branches",
+      "reason": "Superseded by upstream Enzyme-JAX PRs #3242 and #3241, included through main."
+    },
+    {
+      "change": "RK14/RK17/RK18 experiments",
+      "reason": "Not part of the selected reviewed stack; RK17 is optional and RK18 was rejected."
+    }
+  ]
+}
