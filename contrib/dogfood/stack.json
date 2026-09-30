@@ -30,17 +30,17 @@
         },
         {
           "branch": "convert-convert-float-exact",
-          "commit": "208b4fe856bb15bf1c7c3e511b52e746fb280964",
-          "source": "Local topic, not published"
+          "commit": "a921925c47e247295b3937f6b6b45b678cd18dac",
+          "source": "Local topic, not published; fix compiled in build dogfood-c94e74b6-r1, convertconvert.mlir expectations corrected afterwards"
         },
         {
           "branch": "reshape-slice-rewrite-termination",
           "commit": "b7942574784e2eb7490e925d9c8856fd36a46ce1",
-          "source": "Local topic; stock-fails verified, fix not yet compiled"
+          "source": "Local topic, not published; compiled and runtime-accepted in build dogfood-c94e74b6-r1"
         }
       ],
-      "commit": "2d1d813e31c53bfb2dab66d1a13a0a0633bad706",
-      "tree": "772d27bfd47535819964d4aed509585cf3fca8d5"
+      "commit": "82a83e0642bcdec0f34cc34daaac0c72c11d56b7",
+      "tree": "fdda783459c524e3597dab3273bc3cef69f11724"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
