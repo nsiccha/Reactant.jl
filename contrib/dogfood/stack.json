@@ -37,10 +37,30 @@
           "branch": "reshape-slice-rewrite-termination",
           "commit": "b7942574784e2eb7490e925d9c8856fd36a46ce1",
           "source": "Local topic, not published; compiled and runtime-accepted in build dogfood-c94e74b6-r1"
+        },
+        {
+          "branch": "complex-abs-derivatives",
+          "commit": "dcc4736b319e720e2acef1af34296bbab26e9585",
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+        },
+        {
+          "branch": "complex-reduce-mul-derivative",
+          "commit": "250bc787fd5b8d737c44af1d078fd1d9594e3d05",
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+        },
+        {
+          "branch": "linalg-lu-tall-permutation",
+          "commit": "d2113ab9401c57b99402f87b06968514d2454343",
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+        },
+        {
+          "branch": "gesdd-complex-rwork",
+          "commit": "56d19abb7d902c732ad3061e2961617b1b578a38",
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
         }
       ],
-      "commit": "82a83e0642bcdec0f34cc34daaac0c72c11d56b7",
-      "tree": "fdda783459c524e3597dab3273bc3cef69f11724"
+      "commit": "cebaedd1d73aab2877d8adf34895a6035bbac160",
+      "tree": "4783d41d68301204aed492bf2de8dfb745c26617"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
