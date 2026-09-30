@@ -27,10 +27,15 @@
         {
           "branch": "complex-zero-constant-folds",
           "commit": "104e8868c83b9c3636385b568b057bdffc1f0f3e"
+        },
+        {
+          "branch": "convert-convert-float-exact",
+          "commit": "208b4fe856bb15bf1c7c3e511b52e746fb280964",
+          "source": "Local topic, not published"
         }
       ],
-      "commit": "4d5bd94821c28208b687d0e88a2b6d892813a5ca",
-      "tree": "668298ce94de2eec45dc8ba2018289da1417a69f"
+      "commit": "6354833185e88a5d7094e56d3e37cc5cda42b2fa",
+      "tree": "7cf0631d4114c7ff6f9e0f79d841dd14bdb9f195"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
