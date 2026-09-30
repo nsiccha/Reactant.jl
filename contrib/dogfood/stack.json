@@ -32,10 +32,15 @@
           "branch": "convert-convert-float-exact",
           "commit": "208b4fe856bb15bf1c7c3e511b52e746fb280964",
           "source": "Local topic, not published"
+        },
+        {
+          "branch": "reshape-slice-rewrite-termination",
+          "commit": "b7942574784e2eb7490e925d9c8856fd36a46ce1",
+          "source": "Local topic; stock-fails verified, fix not yet compiled"
         }
       ],
-      "commit": "6354833185e88a5d7094e56d3e37cc5cda42b2fa",
-      "tree": "7cf0631d4114c7ff6f9e0f79d841dd14bdb9f195"
+      "commit": "2d1d813e31c53bfb2dab66d1a13a0a0633bad706",
+      "tree": "772d27bfd47535819964d4aed509585cf3fca8d5"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
@@ -50,6 +55,9 @@
           "branch": "pkpd-trace-index-sentinels-20260929",
           "commit": "fbb11023c774bdef1c8e462158ef4ca71b36d9bb"
         }
+      ],
+      "integration_notes": [
+        "Omit optional Z3 WORKSPACE load: the selected Enzyme-JAX main-based pin does not provide third_party/z3."
       ]
     },
     "Enzyme.jl": {

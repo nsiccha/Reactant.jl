@@ -59,3 +59,12 @@ version separately. The shared source repository named Enzyme contains both
 native and MLIR code, but a Reactant MLIR build is not a native Julia LLVM
 plugin. Any later native-library override must be built against Julia's LLVM
 and verified independently, following Enzyme.jl's `docs/src/dev_docs.md`.
+
+## Compiler source compatibility
+
+This candidate pins an Enzyme-JAX main-based source without the optional Z3
+integration. Reactant upstream's Z3 WORKSPACE load belongs to a separate
+Enzyme-JAX branch and is omitted here to match the selected compiler source.
+No Z3-backed functionality is included in this candidate. Restore that load
+only with a compiler pin that provides its Bazel package and validate the
+combined library again.
