@@ -65,10 +65,8 @@ using Reactant, Test
     @test count("stablehlo.convert", hlo) >= 2
     @test occursin("tensor<3xf32>", hlo)
     @test occursin("tensor<3xf64>", hlo)
-    # A separate optimizer bug also reproduces with staged standalone casts
-    # on unmodified Reactant 0.2.289: it incorrectly elides f64 -> f32 -> f64.
-    # Keep this exact dependency boundary visible and self-firing once fixed.
-    @test_broken Array(@jit f(x_ra)) == f(x)
+    # The dogfood compiler preserves rounding through f64 -> f32 -> f64.
+    @test Array(@jit f(x_ra)) == f(x)
 
     narrow = x -> Float32.(view(x, 1:3))
     actual32 = @jit narrow(x_ra)
