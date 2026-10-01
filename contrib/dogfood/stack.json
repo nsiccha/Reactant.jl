@@ -41,26 +41,26 @@
         {
           "branch": "complex-abs-derivatives",
           "commit": "dcc4736b319e720e2acef1af34296bbab26e9585",
-          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime-accepted in build dogfood-b40b1c08-r2"
         },
         {
           "branch": "complex-reduce-mul-derivative",
           "commit": "250bc787fd5b8d737c44af1d078fd1d9594e3d05",
-          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime-accepted in build dogfood-b40b1c08-r2"
         },
         {
           "branch": "linalg-lu-tall-permutation",
           "commit": "d2113ab9401c57b99402f87b06968514d2454343",
-          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+          "source": "Published nsiccha/Enzyme-JAX topic; runtime-accepted in build dogfood-b40b1c08-r2"
         },
         {
           "branch": "gesdd-complex-rwork",
-          "commit": "56d19abb7d902c732ad3061e2961617b1b578a38",
-          "source": "Published nsiccha/Enzyme-JAX topic; runtime acceptance in this combined build is pending"
+          "commit": "af6c697092be0602ef8f4946fd62c447d34f2a09",
+          "source": "Published nsiccha/Enzyme-JAX topic, draft EnzymeAD/Enzyme-JAX#3301; contains 56d19abb7d902c732ad3061e2961617b1b578a38, runtime-accepted in build dogfood-b40b1c08-r2; the complex WORK allocation was compiled and runtime-checked in build svd-099f61ea-r1"
         }
       ],
-      "commit": "cebaedd1d73aab2877d8adf34895a6035bbac160",
-      "tree": "4783d41d68301204aed492bf2de8dfb745c26617"
+      "commit": "099f61ea72900a8293701fa3f7c759ca5d929b72",
+      "tree": "3f4fb7e62340e5e367c0f490d7f1bdeb23e78898"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
