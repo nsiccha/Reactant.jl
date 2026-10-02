@@ -60,12 +60,12 @@
         },
         {
           "branch": "fix/reduce-pad-multiplicity",
-          "commit": "85424fe049779342f847285eadfa98c2db73c503",
-          "source": "Local upstream-main topic, not published; compiled validation pending. Correct reduce(pad) multiplicity and init; seven focused regressions and corrected existing reducepad checks."
+          "commit": "b137bad77a54e03698e42411b967efd3d328c905",
+          "source": "Local upstream-main topic, not published; includes 85424fe049779342f847285eadfa98c2db73c503. Compiled validation pending. Correct reduce(pad) multiplicity/init, reject wrapped integer product exponents; eight focused regressions and corrected existing reducepad checks."
         }
       ],
-      "commit": "e981879c81131d4993b4ee749628c45f84394da1",
-      "tree": "073070be50861e597fa7c72bac0de665651e5aaa"
+      "commit": "d2cf50512abedd5b066436a555c0477cd5b5c563",
+      "tree": "60dcebbdb19e0472c2f0c78f0aefd72e14c315ac"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
