@@ -69,7 +69,7 @@
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "dd4809b0de9d55d7237c61c97ddb3ef615b6a924",
+      "upstream_main": "19bf4a5be57bc6c55e3b877dfade4c38947e516e",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
@@ -79,10 +79,16 @@
         {
           "branch": "pkpd-trace-index-sentinels-20260929",
           "commit": "fbb11023c774bdef1c8e462158ef4ca71b36d9bb"
+        },
+        {
+          "branch": "fix/adjoint-linear-gather",
+          "commit": "41919b47da9f44b645b591ef79ff656f83df4bb7",
+          "source": "Clean main-only producer, two-file Julia source/test repair; standalone suite510/510 and exact public MWE verified. Local --no-ff dogfood intake authorized by hunt0lx2ea3. Integrated validation and library identity recorded separately in intake1duca0d; no native rebuild/publication implied."
         }
       ],
       "integration_notes": [
-        "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default."
+        "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default.",
+        "Adjoint gather intake includes upstream main collect(SubArray) and BUILD header cleanup. WORKSPACE conflict retains accepted dogfood Enzyme-JAX73ebe pin. Existing4a65 library is used for frontend acceptance; native BUILD changes await the next separately scoped combined build."
       ]
     },
     "Enzyme.jl": {
