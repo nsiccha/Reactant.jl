@@ -82,13 +82,14 @@
         },
         {
           "branch": "fix/adjoint-linear-gather",
-          "commit": "41919b47da9f44b645b591ef79ff656f83df4bb7",
-          "source": "Clean main-only producer, two-file Julia source/test repair; standalone suite510/510 and exact public MWE verified. Local --no-ff dogfood intake authorized by hunt0lx2ea3. Integrated validation and library identity recorded separately in intake1duca0d; no native rebuild/publication implied."
+          "commit": "77f00510315c65447ebcd8494c61b3bae98b7227",
+          "source": "Corrected clean-main producer; descendant of41919 validates static masks, index types/bounds and Cartesian shapes before materialization. Standalone574/574 and renewed producer acceptance verified. Local --no-ff intake authorized by hunt0lx2ea3; integrated library/runtime acceptance is recorded separately in1duca0d. No native rebuild/publication implied."
         }
       ],
       "integration_notes": [
         "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default.",
-        "Adjoint gather intake includes upstream main collect(SubArray) and BUILD header cleanup. WORKSPACE conflict retains accepted dogfood Enzyme-JAX73ebe pin. Existing4a65 library is used for frontend acceptance; native BUILD changes await the next separately scoped combined build."
+        "Adjoint gather intake includes upstream main collect(SubArray) and BUILD header cleanup. WORKSPACE conflict retains accepted dogfood Enzyme-JAX73ebe pin. Existing4a65 library is used for frontend acceptance; native BUILD changes await the next separately scoped combined build.",
+        "Retained provisional41919/a264 history and initial setup failure;77f005 corrects frontier findings. Retained4a65 compiled library with exact current Julia-source runtime checks; no native rebuild under this hunt."
       ]
     },
     "Enzyme.jl": {
