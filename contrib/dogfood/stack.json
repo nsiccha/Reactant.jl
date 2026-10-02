@@ -60,12 +60,12 @@
         },
         {
           "branch": "fix/reduce-pad-multiplicity",
-          "commit": "0b8d635ea949c7ef321e6567ed4f0a7826dfacad",
-          "source": "Local upstream-main topic, not published. Includes multiplicity/init repair, integer and floating/complex product-exponent guards, eleven focused regressions. Original eight compiled cases pass; corrected legacy min/max hoisting checks pass. Full initial lit: 1417/1418, sole ordering failure corrected. Updated compiled/default acceptance pending."
+          "commit": "1817a28d16f484d8bc1b2f5b607ecf83b03064ad",
+          "source": "Local upstream-main topic, unpublished. Independent Astra incremental review clears multiplicity/init repair, exact product/additive factors, zero and boolean sums, promoted-reducer rejection, and complex component scaling; twenty focused regressions consolidated in reducepad.mlir. Updated compiled/default acceptance pending."
         }
       ],
-      "commit": "4b8707ce6e0ea6f701805f7a1a70958887dfd2e4",
-      "tree": "32c3a90920f1fa15a6e07faa07178c717d9fec26"
+      "commit": "e72bfa35c81b06e02b5abe5f34f1f3d8656c2203",
+      "tree": "549418cbd95b7ab5c47ca0b3546a1d48616938b9"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
