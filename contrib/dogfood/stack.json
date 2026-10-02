@@ -60,12 +60,12 @@
         },
         {
           "branch": "fix/reduce-pad-multiplicity",
-          "commit": "1817a28d16f484d8bc1b2f5b607ecf83b03064ad",
-          "source": "Local upstream-main topic, unpublished. Independent Astra incremental review clears multiplicity/init repair, exact product/additive factors, zero and boolean sums, promoted-reducer rejection, and complex component scaling; twenty focused regressions consolidated in reducepad.mlir. Updated compiled/default acceptance pending."
+          "commit": "f21a998c26dfb31ab6fb4901504540e6a0810e3b",
+          "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. Current frontend pins are metadata-only relative to the accepted build; artifact SHA256 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba."
         }
       ],
-      "commit": "e72bfa35c81b06e02b5abe5f34f1f3d8656c2203",
-      "tree": "549418cbd95b7ab5c47ca0b3546a1d48616938b9"
+      "commit": "73ebe252cb0ebdaa2f2d91487b09c72e0684ea5b",
+      "tree": "124253ce24d03b211ea38230a5a649d0b92b6a3e"
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
