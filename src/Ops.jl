@@ -2347,19 +2347,18 @@ end
     )
     #! format: on
 
-    return TracedRArray{T}(
-        MLIR.IR.result(
-            MLIR.Dialects.stablehlo.gather(
-                src.mlir_data,
-                gather_indices.mlir_data;
-                dimension_numbers,
-                slice_sizes,
-                indices_are_sorted,
-                location,
-            ),
-            1,
-        ),
+    gather_op = MLIR.Dialects.stablehlo.gather(
+        src.mlir_data,
+        gather_indices.mlir_data;
+        dimension_numbers,
+        slice_sizes,
+        indices_are_sorted,
+        location,
     )
+    # Preserve the authored order of indexed and elementwise work through AD,
+    # even when the relative input/output sizes change during specialization.
+    MLIR.IR.setattr!(gather_op, "enzymexla.preserve_gather_order", MLIR.IR.UnitAttribute())
+    return TracedRArray{T}(MLIR.IR.result(gather_op, 1))
 end
 
 @noinline function while_loop(

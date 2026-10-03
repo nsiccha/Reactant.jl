@@ -152,3 +152,38 @@ end
     @test inventories[3] == inventories[4]
     @test allequal([map(retained_work_inventory, pair) for pair in inventories])
 end
+
+retained_indexed_loss(x, i, j) = sum(sin.(x[i])) + sum(abs2, x[j])
+retained_indexed_gradient(x, i, j) = Enzyme.gradient(
+    Enzyme.Reverse, Enzyme.Const(retained_indexed_loss), x, Enzyme.Const(i), Enzyme.Const(j))[1]
+
+@testset "Independent repeated-index ordinary reverse retention" begin
+    inventories = []
+    for n in (16, 64, 256, 1024)
+        x = [0.2sin(k) for k in 1:128]
+        i = [mod1(3k, length(x)) for k in 1:2n]
+        j = [mod1(5k, length(x)) for k in 1:n]
+        args = map(Reactant.to_rarray, (x, i, j))
+        primal = Reactant.@compile retained_indexed_loss(args...)
+        reverse = Reactant.@compile retained_indexed_gradient(args...)
+        pair = map(retained_executable_inventory, (primal, reverse))
+        println("retained indexed executable inventory, n=", n, ": ", pair)
+        push!(inventories, pair)
+        for offset in (0.0, 0.03)
+            y = x .+ offset
+            rx = Reactant.to_rarray(y)
+            expected = zeros(length(y))
+            for index in i
+                expected[index] += cos(y[index])
+            end
+            for index in j
+                expected[index] += 2y[index]
+            end
+            @test Float64(primal(rx, args[2], args[3])) ≈ retained_indexed_loss(y, i, j) rtol=1e-11 atol=1e-12
+            @test Array(reverse(rx, args[2], args[3])) ≈ expected rtol=1e-11 atol=1e-12
+            @test Array(rx) == y
+        end
+        @test map(Array, args) == (x, i, j)
+    end
+    @test allequal(inventories)
+end
