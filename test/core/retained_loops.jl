@@ -37,6 +37,17 @@ function retained_work_inventory(ops)
     return Dict(name => count for (name, count) in ops if name ∉ simplified)
 end
 
+function retained_executable_inventory(compiled)
+    hlo = repr(only(Reactant.XLA.get_hlo_modules(compiled.exec)))
+    counts = Dict{String,Int}()
+    # Tuple type comments contain '='; match past the complete result type.
+    for match in eachmatch(r"(?m)^\s*(?:ROOT\s+)?%?[\w.-]+ = .*?\s+([A-Za-z][A-Za-z0-9_-]*)\(", hlo)
+        name = match.captures[1]
+        counts[name] = get(counts, name, 0) + 1
+    end
+    return counts
+end
+
 @testset "Shape-specialized loops retain default primal and reverse structure" begin
     inventories = []
     for K in (2, 4, 8, 16)
@@ -52,6 +63,16 @@ end
         @test get(ops[2], "stablehlo.while", 0) == 2
         println("retained diagonal complete inventory, K=", K, ": ", ops)
         push!(inventories, ops)
+
+        # Inspect the executable after ordinary XLA optimization as well as
+        # MLIR: singleton loops and lazy branches can disappear at this stage.
+        xla_ops = map(retained_executable_inventory, (primal, reverse))
+        println("retained diagonal executable inventory, K=", K, ": ", xla_ops)
+        @test get(xla_ops[1], "while", 0) == 1
+        @test get(xla_ops[2], "while", 0) == 2
+        @test get(xla_ops[1], "conditional", 0) == 1
+        @test get(xla_ops[2], "conditional", 0) == 2
+        @test all(ops -> get(ops, "log", 0) == 1, xla_ops)
 
         for w in (u, u .+ 0.03)
             rw = Reactant.to_rarray(w)
