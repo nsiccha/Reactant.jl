@@ -219,7 +219,167 @@ function run!(pm::MLIR.IR.PassManager, op, key::String="")
     return result
 end
 
+# Frontend loop bounds may still be constant expressions before the optimizer
+# sees them. Evaluate only scalar integer expressions with defined, nonoverflowing
+# arithmetic; leave other values for the normal compiler pipeline.
+function constant_loop_limit(value, depth=0)
+    depth < 64 && MLIR.IR.is_op_res(value) || return nothing
+    ty = MLIR.IR.type(value)
+    size(ty) == () || return nothing
+    element = eltype(ty)
+    MLIR.IR.isinteger(element) || return nothing
+    MLIR.IR.bitwidth(element) in (8, 16, 32, 64) || return nothing
+    T = MLIR.IR.julia_type(element)
+    owner = MLIR.IR.op_owner(value)
+    name = MLIR.IR.name(owner)
+    if name == "stablehlo.constant"
+        attribute = MLIR.IR.getattr(owner, "value")
+        MLIR.API.mlirDenseElementsAttrIsSplat(attribute) || return nothing
+        scalar = MLIR.API.mlirDenseElementsAttrGetSplatValue(attribute)
+        return MLIR.API.mlirIntegerAttrGetValueInt(scalar) % T
+    end
+    name in (
+        "stablehlo.add",
+        "stablehlo.subtract",
+        "stablehlo.multiply",
+        "stablehlo.divide",
+        "stablehlo.convert",
+    ) || return nothing
+    operands = map(MLIR.IR.operands(owner)) do operand
+        constant_loop_limit(operand, depth + 1)
+    end
+    any(isnothing, operands) && return nothing
+    try
+        result = if name == "stablehlo.convert"
+            T(only(operands))
+        elseif name == "stablehlo.add"
+            Base.Checked.checked_add(operands...)
+        elseif name == "stablehlo.subtract"
+            Base.Checked.checked_sub(operands...)
+        elseif name == "stablehlo.multiply"
+            Base.Checked.checked_mul(operands...)
+        else
+            div(operands...)
+        end
+        return T(result)
+    catch error
+        error isa Union{OverflowError,DivideError,InexactError} || rethrow()
+        return nothing
+    end
+end
+
+function contains_lazy_branch(op)
+    MLIR.IR.name(op) == "stablehlo.if" && return true
+    for region in op, block in region, child in block
+        contains_lazy_branch(child) && return true
+    end
+    return false
+end
+
+function preserve_loop_limits!(op, guarded=false)
+    guarded |= MLIR.IR.name(op) == "stablehlo.if"
+    for region in op, block in region, child in collect(block)
+        preserve_loop_limits!(child, guarded)
+    end
+    MLIR.IR.name(op) == "stablehlo.while" || return nothing
+    # Retain scalar iteration where lazy branches depend on it, while leaving
+    # unconditional tensor loops available to loop raising and auto-batching.
+    guarded || contains_lazy_branch(op) || return nothing
+    condition = first(first(op))
+    for compare in collect(condition)
+        MLIR.IR.name(compare) == "stablehlo.compare" || continue
+        for i in 1:MLIR.IR.noperands(compare)
+            value = MLIR.IR.operand(compare, i)
+            if MLIR.IR.is_block_arg(value) && MLIR.IR.block_owner(value) == condition
+                position = MLIR.IR.block_arg_num(value) + 1
+                body = first(MLIR.IR.region(op, 2))
+                carried = MLIR.IR.operand(MLIR.IR.terminator(body), position)
+                carried == MLIR.IR.argument(body, position) || continue
+                value = MLIR.IR.operand(op, position)
+            end
+            count = constant_loop_limit(value)
+            count === nothing && continue
+            typemin(Int64) <= count <= typemax(Int64) || continue
+            ty = MLIR.IR.type(value)
+            element = eltype(ty)
+            attribute = fill(MLIR.IR.Attribute(count, element), ty)
+            count = Int64(count)
+            # A constant defined inside the condition cannot escape its block.
+            # Materialize the same scalar outside the loop before sealing it.
+            copy = MLIR.IR.create_operation_common(
+                "stablehlo.constant",
+                MLIR.IR.location(op);
+                results=[ty],
+                operands=MLIR.IR.Value[],
+                attributes=[MLIR.IR.NamedAttribute("value", attribute)],
+                result_inference=false,
+            )
+            parent = MLIR.IR.block(op)
+            MLIR.IR.insert_before!(parent, op, copy)
+            barrier = MLIR.IR.create_operation_common(
+                "stablehlo.optimization_barrier",
+                MLIR.IR.location(op);
+                results=[ty],
+                operands=[MLIR.IR.result(copy, 1)],
+                result_inference=false,
+            )
+            bounds = MLIR.IR.Attribute([
+                MLIR.IR.Attribute([MLIR.IR.Attribute(count), MLIR.IR.Attribute(count)])
+            ])
+            MLIR.IR.setattr!(barrier, "enzymexla.bounds", bounds)
+            MLIR.IR.setattr!(barrier, "reactant.loop_limit", MLIR.IR.Attribute(true))
+            MLIR.IR.insert_before!(parent, op, barrier)
+            MLIR.IR.setoperand!(compare, i, MLIR.IR.result(barrier, 1))
+        end
+    end
+    return nothing
+end
+
+function expose_loop_limits_for_ad!(op)
+    for region in op, block in region, child in collect(block)
+        expose_loop_limits_for_ad!(child)
+    end
+    MLIR.IR.name(op) == "stablehlo.optimization_barrier" || return nothing
+    MLIR.IR.getattr(op, "reactant.loop_limit") === nothing && return nothing
+    MLIR.API.mlirValueReplaceAllUsesOfWith(MLIR.IR.result(op, 1), MLIR.IR.operand(op, 1))
+    MLIR.IR.rmfromparent!(op)
+    MLIR.IR.dispose(op)
+    return nothing
+end
+
 function run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
+    preserve_loop_limits!(MLIR.IR.Operation(mod))
+    parts = split(pass_pipeline, r"(?<=,)enzyme-batch(?=,|$)|^enzyme-batch(?=,|$)"; limit=2)
+    if length(parts) == 2
+        _run_pass_pipeline!(
+            mod,
+            rstrip(parts[1], ',') * (isempty(parts[1]) ? "" : ",") * "enzyme-batch",
+            key * "_batch";
+            enable_verifier,
+        )
+        preserve_loop_limits!(MLIR.IR.Operation(mod))
+        suffix = lstrip(parts[2], ',')
+        stages = split(suffix, enzyme_pass; limit=2)
+        if length(stages) == 2
+            before = rstrip(stages[1], ',')
+            isempty(before) ||
+                _run_pass_pipeline!(mod, before, key * "_before_ad"; enable_verifier)
+            expose_loop_limits_for_ad!(MLIR.IR.Operation(mod))
+            _run_pass_pipeline!(mod, enzyme_pass, key * "_ad"; enable_verifier)
+            preserve_loop_limits!(MLIR.IR.Operation(mod))
+            after = lstrip(stages[2], ',')
+            isempty(after) ||
+                _run_pass_pipeline!(mod, after, key * "_after_ad"; enable_verifier)
+        else
+            isempty(suffix) || _run_pass_pipeline!(mod, suffix, key; enable_verifier)
+        end
+    else
+        _run_pass_pipeline!(mod, pass_pipeline, key; enable_verifier)
+    end
+    return mod
+end
+
+function _run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
     pm = MLIR.IR.PassManager()
     id = nothing
     try
