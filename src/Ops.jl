@@ -2438,6 +2438,11 @@ end
         location,
     )
 
+    # Shape specialization does not turn an authored loop into fixed
+    # structural algebra. Keep its body as control flow through optimization
+    # and ordinary reverse-mode AD, including small trip counts.
+    MLIR.IR.setattr!(while_op, "enzymexla.preserve_loop", MLIR.IR.UnitAttribute())
+
     if !mincut
         MLIR.IR.setattr!(while_op, "enzyme.disable_mincut", MLIR.IR.UnitAttribute())
     end
