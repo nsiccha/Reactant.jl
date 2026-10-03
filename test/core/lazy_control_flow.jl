@@ -1,5 +1,84 @@
 using Reactant, Enzyme, Test
 
+@testset "Nested textual pipelines retain the low-level runner contract" begin
+    IR = Reactant.MLIR.IR
+    Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
+        mod = parse(
+            IR.Module,
+            """
+module {
+    func.func @identity(%arg0: tensor<f64>) -> tensor<f64> {
+        return %arg0 : tensor<f64>
+    }
+}
+""",
+        )
+        try
+            for pipeline in (
+                "canonicalize,enzyme-batch,canonicalize",
+                "builtin.module(canonicalize,enzyme-batch,canonicalize)",
+            )
+                @test Reactant.Compiler.run_pass_pipeline!(mod, pipeline) === mod
+                @test IR.verifyall(IR.Operation(mod))
+            end
+        finally
+            IR.dispose(mod)
+        end
+    end
+    identity_array(x) = x
+    input = Reactant.to_rarray([1.0, 2.0])
+    compiled = Reactant.@compile optimize = "builtin.module(inline,canonicalize,enzyme-batch,canonicalize)" identity_array(
+        input
+    )
+    @test Array(compiled(input)) == [1.0, 2.0]
+end
+
+@testset "Shared integer expressions have bounded evaluation cost" begin
+    IR = Reactant.MLIR.IR
+    Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
+        expressions = ["%v0 = stablehlo.constant dense<0> : tensor<i64>"]
+        for i in 1:40
+            push!(expressions, "%v$i = stablehlo.add %v$(i - 1), %v$(i - 1) : tensor<i64>")
+        end
+        source = """
+            module {
+                func.func @expressions(%arg0: tensor<i64>) -> tensor<i64> {
+                    $(join(expressions, '\n'))
+                    %max = stablehlo.constant dense<9223372036854775807> : tensor<i64>
+                    %one = stablehlo.constant dense<1> : tensor<i64>
+                    %overflow = stablehlo.add %max, %one : tensor<i64>
+                    %unknown = stablehlo.add %arg0, %arg0 : tensor<i64>
+                    %undefined = stablehlo.divide %one, %v0 : tensor<i64>
+                    return %v40 : tensor<i64>
+                }
+            }
+            """
+        mod = parse(IR.Module, source)
+        try
+            @test IR.verifyall(IR.Operation(mod))
+            function_op = first(first(first(IR.Operation(mod))))
+            block = first(IR.region(function_op, 1))
+            operations = collect(block)
+            constants = Dict{IR.Value,Any}()
+            @test Reactant.Compiler.constant_loop_limit(
+                IR.result(operations[41], 1), constants
+            ) == 0
+            @test length(constants) == 41
+            limit = IR.result(operations[19], 1)
+            Reactant.Compiler.constant_loop_limit(limit)
+            @test (@allocated Reactant.Compiler.constant_loop_limit(limit)) < 8 * 1024^2
+            for index in (44, 45, 46)
+                value = IR.result(operations[index], 1)
+                @test Reactant.Compiler.constant_loop_limit(value, constants) === nothing
+                @test haskey(constants, value)
+                @test Reactant.Compiler.constant_loop_limit(value, constants) === nothing
+            end
+        finally
+            IR.dispose(mod)
+        end
+    end
+end
+
 function lazy_guard(x, scale)
     result = zero(x)
     Reactant.@trace if scale > 0

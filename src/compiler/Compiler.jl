@@ -312,7 +312,7 @@ Base.@nospecializeinfer function compile_mlir!(
     compiled_f = mlir_fn_res.f
 
     if compile_options.inline && compile_options.optimization_passes === :all
-        _run_pass_pipeline!(mod, "inline", "inline_for_loop_limits")
+        run_pass_pipeline!(mod, "inline", "inline_for_loop_limits")
         preserve_loop_limits!(MLIR.IR.Operation(mod))
     end
 
@@ -446,20 +446,20 @@ Base.@nospecializeinfer function compile_mlir!(
     if compile_options.optimization_passes === :all ||
         compile_options.optimization_passes === :after_enzyme
         raise_pass_list = String[kern, raise_passes]
-        run_pass_pipeline!(
+        run_default_compiler_pipeline!(
             mod,
             join(
                 vcat(
                     String["mark-func-memory-effects", opt_passes],
                     compile_options.raise_first ? raise_pass_list : String[],
                     String["enzyme-batch"],
-                    if compile_options.optimization_passes === :after_enzyme
-                        String[]
-                    else
-                        String[opt_passes2]
-                    end,
+                ),
+                ",",
+            ),
+            compile_options.optimization_passes === :after_enzyme ? "" : opt_passes2,
+            join(
+                vcat(
                     String[
-                        enzyme_pass,
                         opt_passes2,
                         "canonicalize",
                         "remove-unnecessary-enzyme-ops",
@@ -1265,33 +1265,6 @@ function compile_xla(f, args; kwargs...)
     MLIR.IR.@dispose ctx = Reactant.ReactantContext() begin
         compile_xla(ctx, f, args; kwargs...)
     end
-end
-
-# Seal branch results only after differentiation and MLIR optimization. XLA
-# otherwise speculates cheap pure operations from both arms of a conditional.
-# Keeping this out of the differentiable IR requires no barrier adjoint.
-function preserve_lazy_branch_returns!(op)
-    for region in op, block in region
-        for child in collect(block)
-            preserve_lazy_branch_returns!(child)
-        end
-        MLIR.IR.name(op) == "stablehlo.if" || continue
-        terminator = MLIR.IR.terminator(block)
-        operands = MLIR.IR.operands(terminator)
-        isempty(operands) && continue
-        barrier = MLIR.IR.create_operation_common(
-            "stablehlo.optimization_barrier",
-            MLIR.IR.Location();
-            results=MLIR.IR.type.(operands),
-            operands,
-            result_inference=false,
-        )
-        MLIR.IR.insert_before!(block, terminator, barrier)
-        for i in eachindex(operands)
-            MLIR.IR.setoperand!(terminator, i, MLIR.IR.result(barrier, i))
-        end
-    end
-    return nothing
 end
 
 function compile_xla(

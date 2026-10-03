@@ -221,9 +221,18 @@ end
 
 # Frontend loop bounds may still be constant expressions before the optimizer
 # sees them. Evaluate only scalar integer expressions with defined, nonoverflowing
-# arithmetic; leave other values for the normal compiler pipeline.
-function constant_loop_limit(value, depth=0)
-    depth < 64 && MLIR.IR.is_op_res(value) || return nothing
+# arithmetic; leave other values for the normal compiler pipeline. Share the
+# memo table across the preservation traversal, including unrecognized values,
+# so repeated SSA operands do not cause exponential work.
+function constant_loop_limit(value, constants=Dict{MLIR.IR.Value,Any}(), depth=0)
+    depth < 64 || return nothing
+    return get!(constants, value) do
+        evaluate_constant_loop_limit(value, constants, depth)
+    end
+end
+
+function evaluate_constant_loop_limit(value, constants, depth)
+    MLIR.IR.is_op_res(value) || return nothing
     ty = MLIR.IR.type(value)
     size(ty) == () || return nothing
     element = eltype(ty)
@@ -246,7 +255,7 @@ function constant_loop_limit(value, depth=0)
         "stablehlo.convert",
     ) || return nothing
     operands = map(MLIR.IR.operands(owner)) do operand
-        constant_loop_limit(operand, depth + 1)
+        constant_loop_limit(operand, constants, depth + 1)
     end
     any(isnothing, operands) && return nothing
     try
@@ -276,10 +285,10 @@ function contains_lazy_branch(op)
     return false
 end
 
-function preserve_loop_limits!(op, guarded=false)
+function preserve_loop_limits!(op, guarded=false, constants=Dict{MLIR.IR.Value,Any}())
     guarded |= MLIR.IR.name(op) == "stablehlo.if"
     for region in op, block in region, child in collect(block)
-        preserve_loop_limits!(child, guarded)
+        preserve_loop_limits!(child, guarded, constants)
     end
     MLIR.IR.name(op) == "stablehlo.while" || return nothing
     # Retain scalar iteration where lazy branches depend on it, while leaving
@@ -297,7 +306,7 @@ function preserve_loop_limits!(op, guarded=false)
                 carried == MLIR.IR.argument(body, position) || continue
                 value = MLIR.IR.operand(op, position)
             end
-            count = constant_loop_limit(value)
+            count = constant_loop_limit(value, constants)
             count === nothing && continue
             typemin(Int64) <= count <= typemax(Int64) || continue
             ty = MLIR.IR.type(value)
@@ -348,38 +357,6 @@ function expose_loop_limits_for_ad!(op)
 end
 
 function run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
-    preserve_loop_limits!(MLIR.IR.Operation(mod))
-    parts = split(pass_pipeline, r"(?<=,)enzyme-batch(?=,|$)|^enzyme-batch(?=,|$)"; limit=2)
-    if length(parts) == 2
-        _run_pass_pipeline!(
-            mod,
-            rstrip(parts[1], ',') * (isempty(parts[1]) ? "" : ",") * "enzyme-batch",
-            key * "_batch";
-            enable_verifier,
-        )
-        preserve_loop_limits!(MLIR.IR.Operation(mod))
-        suffix = lstrip(parts[2], ',')
-        stages = split(suffix, enzyme_pass; limit=2)
-        if length(stages) == 2
-            before = rstrip(stages[1], ',')
-            isempty(before) ||
-                _run_pass_pipeline!(mod, before, key * "_before_ad"; enable_verifier)
-            expose_loop_limits_for_ad!(MLIR.IR.Operation(mod))
-            _run_pass_pipeline!(mod, enzyme_pass, key * "_ad"; enable_verifier)
-            preserve_loop_limits!(MLIR.IR.Operation(mod))
-            after = lstrip(stages[2], ',')
-            isempty(after) ||
-                _run_pass_pipeline!(mod, after, key * "_after_ad"; enable_verifier)
-        else
-            isempty(suffix) || _run_pass_pipeline!(mod, suffix, key; enable_verifier)
-        end
-    else
-        _run_pass_pipeline!(mod, pass_pipeline, key; enable_verifier)
-    end
-    return mod
-end
-
-function _run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
     pm = MLIR.IR.PassManager()
     id = nothing
     try
@@ -395,6 +372,48 @@ function _run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
         !isnothing(id) && Reactant.Profiler.profiler_activity_end(id)
         MLIR.IR.dispose(pm)
     end
+    return mod
+end
+
+# Seal branch results only after differentiation and MLIR optimization. XLA
+# otherwise speculates cheap pure operations from both arms of a conditional.
+# Keeping this out of the differentiable IR requires no barrier adjoint.
+function preserve_lazy_branch_returns!(op)
+    for region in op, block in region
+        for child in collect(block)
+            preserve_lazy_branch_returns!(child)
+        end
+        MLIR.IR.name(op) == "stablehlo.if" || continue
+        terminator = MLIR.IR.terminator(block)
+        operands = MLIR.IR.operands(terminator)
+        isempty(operands) && continue
+        barrier = MLIR.IR.create_operation_common(
+            "stablehlo.optimization_barrier",
+            MLIR.IR.Location();
+            results=MLIR.IR.type.(operands),
+            operands,
+            result_inference=false,
+        )
+        MLIR.IR.insert_before!(block, terminator, barrier)
+        for i in eachindex(operands)
+            MLIR.IR.setoperand!(terminator, i, MLIR.IR.result(barrier, i))
+        end
+    end
+    return nothing
+end
+
+# The standard compiler supplies these phase boundaries explicitly. Keep the
+# low-level runner opaque: nested or quoted custom pass pipelines are MLIR's
+# syntax, and must reach its parser unchanged.
+function run_default_compiler_pipeline!(mod, before_batch, before_ad, after_ad, key)
+    preserve_loop_limits!(MLIR.IR.Operation(mod))
+    run_pass_pipeline!(mod, before_batch, key * "_batch")
+    preserve_loop_limits!(MLIR.IR.Operation(mod))
+    isempty(before_ad) || run_pass_pipeline!(mod, before_ad, key * "_before_ad")
+    expose_loop_limits_for_ad!(MLIR.IR.Operation(mod))
+    run_pass_pipeline!(mod, enzyme_pass, key * "_ad")
+    preserve_loop_limits!(MLIR.IR.Operation(mod))
+    run_pass_pipeline!(mod, after_ad, key * "_after_ad")
     return mod
 end
 
