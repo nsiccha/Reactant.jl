@@ -48,6 +48,60 @@ function retained_executable_inventory(compiled)
     return counts
 end
 
+function retained_work_outside_loops(compiled)
+    module_ = only(Reactant.XLA.get_hlo_modules(compiled.exec))
+    counts = Dict{String,Int}()
+    visited = Set{Ptr{Cvoid}}()
+    function visit(computation)
+        computation.ptr in visited && return
+        push!(visited, computation.ptr)
+        for instruction in computation.instructions
+            name = repr(instruction.opcode)
+            counts[name] = get(counts, name, 0) + 1
+            name == "while" && continue
+            if Reactant.XLA.is_fusion_instruction(instruction)
+                visit(instruction.fused_instructions_computation)
+            elseif Reactant.XLA.has_to_apply(instruction)
+                visit(instruction.to_apply)
+            end
+        end
+    end
+    GC.@preserve module_ visit(module_.entry_computation)
+    return counts
+end
+
+function retained_invariant_loss(u)
+    x = sum(view(u, 1:1))
+    total = zero(x)
+    @trace track_numbers=false for i in 1:(length(u) - 1)
+        total += log(x)
+    end
+    return total
+end
+
+@testset "Invariant work remains inside retained loops, including zero trips" begin
+    for n in (0, 1, 3)
+        ru = Reactant.to_rarray([0.8; zeros(n)])
+        compiled = @compile retained_invariant_loss(ru)
+        ops = retained_executable_inventory(compiled)
+        @test get(ops, "while", 0) == 1
+        @test get(ops, "log", 0) == 1
+        @test get(retained_work_outside_loops(compiled), "log", 0) == 0
+        for x in (0.8, 1.1)
+            w = [x; zeros(n)]
+            rw = Reactant.to_rarray(w)
+            @test Float64(compiled(rw)) ≈ n * log(x) rtol=1e-12
+            @test Array(rw) == w
+        end
+        if n == 0
+            # The inactive loop body must not evaluate this invalid log.
+            rw = Reactant.to_rarray([-0.2])
+            @test Float64(compiled(rw)) == 0.0
+            @test Array(rw) == [-0.2]
+        end
+    end
+end
+
 @testset "Shape-specialized loops retain default primal and reverse structure" begin
     inventories = []
     for K in (2, 4, 8, 16)
