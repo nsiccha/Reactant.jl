@@ -99,6 +99,146 @@ end
     end
 end
 
+function singleton_condition_guard_source(; observable=false, nested=false)
+    sink = if observable
+        "stablehlo.custom_call @condition_sink(%condition_value) {has_side_effect = true} : (tensor<f64>) -> ()"
+    else
+        ""
+    end
+    body_value = nested ? """
+        %inner = "stablehlo.if"(%positive) ({
+            %log = stablehlo.log %x : tensor<f64>
+            stablehlo.return %log : tensor<f64>
+        }, {
+            stablehlo.return %zero : tensor<f64>
+        }) : (tensor<i1>) -> tensor<f64>
+        stablehlo.return %inner : tensor<f64>
+        """ : """
+        %log = stablehlo.log %x : tensor<f64>
+        stablehlo.return %log : tensor<f64>
+        """
+    nested_loop =
+        nested ? """
+%two = stablehlo.constant dense<2> : tensor<i64>
+%nested = stablehlo.while(%j = %start) : tensor<i64>
+cond {
+    %nested_value = "stablehlo.if"(%positive) ({
+        stablehlo.return %x : tensor<f64>
+    }, {
+        stablehlo.return %zero : tensor<f64>
+    }) : (tensor<i1>) -> tensor<f64>
+    %more = stablehlo.compare LT, %j, %two : (tensor<i64>, tensor<i64>) -> tensor<i1>
+    stablehlo.return %more : tensor<i1>
+} do {
+    %next = stablehlo.add %j, %limit : tensor<i64>
+    stablehlo.return %next : tensor<i64>
+}
+""" : ""
+    return """
+        module {
+            func.func @main(%x: tensor<f64>) -> tensor<f64> {
+                %start = stablehlo.constant dense<0> : tensor<i64>
+                %limit = stablehlo.constant dense<1> : tensor<i64>
+                %zero = stablehlo.constant dense<0.0> : tensor<f64>
+                %result:2 = stablehlo.while(%i = %start, %y = %zero) : tensor<i64>, tensor<f64>
+                cond {
+                    %positive = stablehlo.compare GT, %x, %zero : (tensor<f64>, tensor<f64>) -> tensor<i1>
+                    %condition_value = "stablehlo.if"(%positive) ({
+                        %log = stablehlo.log %x : tensor<f64>
+                        stablehlo.return %log : tensor<f64>
+                    }, {
+                        stablehlo.return %zero : tensor<f64>
+                    }) : (tensor<i1>) -> tensor<f64>
+                    $sink
+                    %more = stablehlo.compare LT, %i, %limit : (tensor<i64>, tensor<i64>) -> tensor<i1>
+                    stablehlo.return %more : tensor<i1>
+                } do {
+                    %positive = stablehlo.compare GT, %x, %zero : (tensor<f64>, tensor<f64>) -> tensor<i1>
+                    %value = "stablehlo.if"(%positive) ({
+                        $body_value
+                    }, {
+                        stablehlo.return %zero : tensor<f64>
+                    }) : (tensor<i1>) -> tensor<f64>
+                    $nested_loop
+                    %next = stablehlo.add %i, %limit : tensor<i64>
+                    stablehlo.return %next, %value : tensor<i64>, tensor<f64>
+                }
+                return %result#1 : tensor<f64>
+            }
+        }
+        """
+end
+
+@testset "Singleton body identities respect region dominance" begin
+    IR = Reactant.MLIR.IR
+    for (observable, nested) in ((false, false), (true, false), (false, true))
+        source = singleton_condition_guard_source(; observable, nested)
+        label = "singleton-condition-$(observable)-$(nested)"
+        output = get(ENV, "LAZY_CONTROL_FLOW_OUTPUT", nothing)
+        if output !== nothing
+            mkpath(output)
+            write(joinpath(output, "$label-original.mlir"), source)
+        end
+        Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
+            mod = parse(IR.Module, source)
+            try
+                @test IR.verifyall(IR.Operation(mod))
+                function_op = first(first(first(IR.Operation(mod))))
+                block = first(IR.region(function_op, 1))
+                loop = only(op for op in block if IR.name(op) == "stablehlo.while")
+                condition = first(IR.region(loop, 1))
+                body = first(IR.region(loop, 2))
+                condition_before = string(IR.region(loop, 1))
+                condition_guard = only(
+                    op for op in condition if IR.name(op) == "stablehlo.if"
+                )
+                predicate_before = IR.operand(condition_guard, 1)
+                @test Reactant.Compiler.preserve_singleton_loop_predicates!(
+                    IR.Operation(mod)
+                )
+                @test IR.verifyall(IR.Operation(mod))
+                @test IR.operand(condition_guard, 1) == predicate_before
+                @test string(IR.region(loop, 1)) == condition_before
+                guards = IR.Operation[]
+                function collect_guards(block)
+                    for op in block
+                        IR.name(op) == "stablehlo.if" && push!(guards, op)
+                        for region in op, nested_block in region
+                            collect_guards(nested_block)
+                        end
+                    end
+                end
+                collect_guards(body)
+                @test length(guards) == (nested ? 3 : 1)
+                for guard in guards
+                    @test IR.name(IR.owner(IR.operand(guard, 1))) == "stablehlo.and"
+                end
+                if output !== nothing
+                    write(joinpath(output, "$label-rewritten.mlir"), string(mod))
+                end
+            finally
+                IR.dispose(mod)
+            end
+        end
+        # This tests the ordinary compiler API. The observable fixture uses an
+        # unregistered side-effecting custom call; it is never executed.
+        primal = x -> only(Reactant.Ops.hlo_call(source, x))
+        input = Reactant.to_rarray(0.5; track_numbers=true)
+        mod = Reactant.@code_hlo primal(input)
+        Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
+            parsed = parse(IR.Module, string(mod))
+            try
+                @test IR.verifyall(IR.Operation(parsed))
+            finally
+                IR.dispose(parsed)
+            end
+        end
+        if output !== nothing
+            write(joinpath(output, "$label-default.mlir"), string(mod))
+        end
+    end
+end
+
 @testset "Shared integer expressions have bounded evaluation cost" begin
     IR = Reactant.MLIR.IR
     Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin

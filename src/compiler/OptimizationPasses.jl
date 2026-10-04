@@ -505,8 +505,8 @@ function normalize_singleton_induction!(op, index)
     return index
 end
 
-function depend_singleton_guards_on_induction!(op, equality)
-    for region in op, block in region, child in collect(block)
+function depend_singleton_guards_on_induction!(block::MLIR.IR.Block, equality)
+    for child in collect(block)
         if MLIR.IR.name(child) == "stablehlo.if"
             predicate = MLIR.IR.operand(child, 1)
             conjunction = MLIR.IR.create_operation_common(
@@ -519,7 +519,9 @@ function depend_singleton_guards_on_induction!(op, equality)
             MLIR.IR.insert_before!(block, child, conjunction)
             MLIR.IR.setoperand!(child, 1, MLIR.IR.result(conjunction, 1))
         end
-        depend_singleton_guards_on_induction!(child, equality)
+        for region in child, nested_block in region
+            depend_singleton_guards_on_induction!(nested_block, equality)
+        end
     end
     return nothing
 end
@@ -564,7 +566,9 @@ function preserve_singleton_loop_predicates!(op)
         result_inference=false,
     )
     MLIR.IR.insert_before!(body, anchor, equality)
-    depend_singleton_guards_on_induction!(op, MLIR.IR.result(equality, 1))
+    # The body identity dominates this block and its nested regions, including
+    # nested loop conditions. It does not dominate this loop's own condition.
+    depend_singleton_guards_on_induction!(body, MLIR.IR.result(equality, 1))
     MLIR.IR.setattr!(op, "reactant.singleton_predicate", MLIR.IR.Attribute(true))
     return true
 end
