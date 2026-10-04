@@ -176,6 +176,10 @@ end
 
 lane_batch(x) = sum(only(Reactant.Ops.batch(lane_guard, [x], Int64[length(x)])))
 lane_gradient(x) = only(Enzyme.gradient(Enzyme.Reverse, Enzyme.Const(lane_batch), x))
+lane_gradient_sum(x) = sum(lane_gradient(x))
+function lane_curvature(x)
+    return only(Enzyme.gradient(Enzyme.Reverse, Enzyme.Const(lane_gradient_sum), x))
+end
 traced(x::Number) = Reactant.to_rarray(x; track_numbers=true)
 traced(x) = Reactant.to_rarray(x)
 host(x::Tuple) = map(host, x)
@@ -407,4 +411,72 @@ end
         end
     end
     @test isempty(repeated_copies)
+end
+
+@testset "Default singleton batch keeps guarded primal and ordinary derivatives" begin
+    for T in (Float32, Float64)
+        input = traced(T[0.5])
+        for (label, fn) in
+            (("primal", lane_batch), ("reverse", lane_gradient), ("second", lane_curvature))
+            compiled = Reactant.@compile serializable = true fn(input)
+            for value in T.((0.5, 1.5, -0.5, 0, NaN))
+                expected = if label == "primal"
+                    value > 0 ? log(value) : zero(value)
+                elseif label == "reverse"
+                    T[value > 0 ? inv(value) : zero(value)]
+                else
+                    T[value > 0 ? -inv(value)^2 : zero(value)]
+                end
+                @test host(compiled(traced(T[value]))) ≈ expected rtol = 3e-6 atol = 3e-6
+            end
+            counts = inspect(compiled, "singleton-batch-$(T)-$(label)")
+            @test get(counts, "while", 0) > 0
+            @test get(counts, "conditional", 0) > 0
+        end
+    end
+end
+
+@testset "Singleton guard dependence uses the changing carried integer" begin
+    for start in (0, 7)
+        limit = start + 1
+        source = """
+            module {
+                func.func @main(%x: tensor<f64>) -> tensor<f64> {
+                    %limit = stablehlo.constant dense<$limit> : tensor<i64>
+                    %start = stablehlo.constant dense<$start> : tensor<i64>
+                    %one = stablehlo.constant dense<1> : tensor<i64>
+                    %zero = stablehlo.constant dense<0.0> : tensor<f64>
+                    %result:3 = stablehlo.while(%bound = %limit, %index = %start, %last = %zero) : tensor<i64>, tensor<i64>, tensor<f64>
+                    cond {
+                        %more = stablehlo.compare LT, %index, %bound : (tensor<i64>, tensor<i64>) -> tensor<i1>
+                        stablehlo.return %more : tensor<i1>
+                    } do {
+                        %positive = stablehlo.compare GT, %x, %zero : (tensor<f64>, tensor<f64>) -> tensor<i1>
+                        %value = "stablehlo.if"(%positive) ({
+                            %log = stablehlo.log %x : tensor<f64>
+                            stablehlo.return %log : tensor<f64>
+                        }, {
+                            stablehlo.return %zero : tensor<f64>
+                        }) : (tensor<i1>) -> tensor<f64>
+                        %next = stablehlo.add %index, %one : tensor<i64>
+                        stablehlo.return %bound, %next, %value : tensor<i64>, tensor<i64>, tensor<f64>
+                    }
+                    return %result#2 : tensor<f64>
+                }
+            }
+            """
+        primal = x -> only(Reactant.Ops.hlo_call(source, x))
+        reverse = x -> only(Enzyme.gradient(Enzyme.Reverse, Enzyme.Const(primal), x))
+        input = traced(0.5)
+        for (label, fn) in (("primal", primal), ("reverse", reverse))
+            compiled = Reactant.@compile serializable = true fn(input)
+            for value in (0.5, 1.5, -0.5, 0.0, NaN)
+                expected = value > 0 ? (label == "primal" ? log(value) : inv(value)) : 0.0
+                @test host(compiled(traced(value))) ≈ expected rtol = 2e-10 atol = 2e-10
+            end
+            counts = inspect(compiled, "singleton-carried-$(start)-$(label)")
+            @test get(counts, "while", 0) > 0
+            @test get(counts, "conditional", 0) > 0
+        end
+    end
 end

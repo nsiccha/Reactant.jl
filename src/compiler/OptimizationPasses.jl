@@ -377,6 +377,89 @@ function is_singleton_loop(op)
     return loop_condition_at_state(compare, condition, updated) === false
 end
 
+# Use a state component that actually changes. An invariant integer bound can
+# precede the induction variable in the carried tuple.
+function singleton_loop_induction_variable(op)
+    constants = Dict{MLIR.IR.Value,Any}()
+    initial = map(MLIR.IR.operands(op)) do value
+        constant_loop_limit(value, constants; through_loop_limits=true)
+    end
+    body = first(MLIR.IR.region(op, 2))
+    updated_constants = Dict{MLIR.IR.Value,Any}(
+        MLIR.IR.argument(body, i) => initial[i] for i in eachindex(initial)
+    )
+    for (i, value) in enumerate(MLIR.IR.operands(MLIR.IR.terminator(body)))
+        initial[i] isa Signed || continue
+        updated = constant_loop_limit(value, updated_constants; through_loop_limits=true)
+        updated isa Signed && initial[i] != updated || continue
+        return MLIR.IR.argument(body, i)
+    end
+    return nothing
+end
+
+function depend_singleton_guards_on_induction!(op, equality)
+    for region in op, block in region, child in collect(block)
+        if MLIR.IR.name(child) == "stablehlo.if"
+            predicate = MLIR.IR.operand(child, 1)
+            conjunction = MLIR.IR.create_operation_common(
+                "stablehlo.and",
+                MLIR.IR.location(child);
+                results=[MLIR.IR.type(predicate)],
+                operands=[predicate, equality],
+                result_inference=false,
+            )
+            MLIR.IR.insert_before!(block, child, conjunction)
+            MLIR.IR.setoperand!(child, 1, MLIR.IR.result(conjunction, 1))
+        end
+        depend_singleton_guards_on_induction!(child, equality)
+    end
+    return nothing
+end
+
+# For singleton batches, slicing a one-element tensor removes the guard's
+# dependence on the induction variable. LICM can then hoist the guard and erase
+# the loop even with its bound sealed. Retain that dependence through an integer
+# identity: i == optimization_barrier(i) is always true. Its integer operands
+# are nondifferentiable, so ordinary AD requires no floating barrier adjoint.
+function preserve_singleton_loop_predicates!(op)
+    preserved = false
+    for region in op, block in region, child in collect(block)
+        preserved |= preserve_singleton_loop_predicates!(child)
+    end
+    MLIR.IR.name(op) == "stablehlo.while" || return preserved
+    contains_lazy_branch(op) && is_singleton_loop(op) || return preserved
+    MLIR.IR.getattr(op, "reactant.singleton_predicate") !== nothing && return true
+    index = singleton_loop_induction_variable(op)
+    index === nothing && return preserved
+    body = first(MLIR.IR.region(op, 2))
+    anchor = first(body)
+    barrier = MLIR.IR.create_operation_common(
+        "stablehlo.optimization_barrier",
+        MLIR.IR.location(op);
+        results=[MLIR.IR.type(index)],
+        operands=[index],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(body, anchor, barrier)
+    equality = MLIR.IR.create_operation_common(
+        "stablehlo.compare",
+        MLIR.IR.location(op);
+        results=[MLIR.IR.TensorType(Int[], MLIR.IR.Type(Bool))],
+        operands=[index, MLIR.IR.result(barrier, 1)],
+        attributes=[
+            MLIR.IR.NamedAttribute(
+                "comparison_direction",
+                parse(MLIR.IR.Attribute, "#stablehlo<comparison_direction EQ>"),
+            ),
+        ],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(body, anchor, equality)
+    depend_singleton_guards_on_induction!(op, MLIR.IR.result(equality, 1))
+    MLIR.IR.setattr!(op, "reactant.singleton_predicate", MLIR.IR.Attribute(true))
+    return true
+end
+
 function preserve_loop_limits!(
     op, guarded=false, constants=Dict{MLIR.IR.Value,Any}(); singleton_only=false
 )
@@ -558,10 +641,15 @@ end
 # low-level runner opaque: nested or quoted custom pass pipelines are MLIR's
 # syntax, and must reach its parser unchanged.
 function run_default_compiler_pipeline!(mod, before_batch, before_ad, after_ad, key)
+    preserve_singleton_loop_predicates!(MLIR.IR.Operation(mod))
     preserve_loop_limits!(MLIR.IR.Operation(mod))
     run_pass_pipeline!(mod, before_batch, key * "_batch")
     preserve_loop_limits!(MLIR.IR.Operation(mod))
-    isempty(before_ad) || run_pass_pipeline!(mod, before_ad, key * "_before_ad")
+    if before_ad isa AbstractString
+        isempty(before_ad) || run_pass_pipeline!(mod, before_ad, key * "_before_ad")
+    else
+        before_ad(mod, key * "_before_ad")
+    end
     expose_loop_limits_for_ad!(MLIR.IR.Operation(mod))
     run_pass_pipeline!(mod, enzyme_pass, key * "_ad")
     after_ad(mod, key * "_after_ad")

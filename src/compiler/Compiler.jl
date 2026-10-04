@@ -464,7 +464,19 @@ Base.@nospecializeinfer function compile_mlir!(
                 ),
                 ",",
             ),
-            compile_options.optimization_passes === :after_enzyme ? "" : opt_passes2,
+            if compile_options.optimization_passes === :after_enzyme
+                ""
+            else
+                (
+                    (mod, phase_key) -> begin
+                        if preserve_singleton_loop_predicates!(MLIR.IR.Operation(mod))
+                            run_lazy_loop_pipeline!(mod, make_opt_passes2, phase_key)
+                        else
+                            run_pass_pipeline!(mod, opt_passes2, phase_key)
+                        end
+                    end
+                )
+            end,
             (mod, phase_key) -> begin
                 run_lazy_loop_pipeline!(
                     mod,
