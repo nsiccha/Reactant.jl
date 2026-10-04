@@ -375,41 +375,49 @@ Base.@nospecializeinfer function compile_mlir!(
         hlo_opts=compile_options.optimization_passes !== :after_enzyme &&
                  compile_options.optimization_passes !== :only_enzyme,
     )
-    opt_passes2 = optimization_passes(
-        compile_options; sroa=false, recognize_comms, lower_comms, backend, is_sharded
-    )
-
-    raise_passes = if raise isa String
-        # Raising passes were specified
-        raise
-    elseif raise
-
-        # Raise enabled but use default passes
-        # TODO(#2240) remove redundant libdevice raise after fixing phase ordering
-        result = "canonicalize,llvm-to-memref-access,canonicalize,convert-llvm-to-cf,canonicalize,enzyme-lift-cf-to-scf,canonicalize,func.func(canonicalize-loops{speculate_partial_if=$(compile_options.speculate_partial_ifs)}),canonicalize-scf-for,canonicalize,libdevice-funcs-raise,canonicalize,affine-cfg,canonicalize,func.func(canonicalize-loops{speculate_partial_if=$(compile_options.speculate_partial_ifs)}),canonicalize,llvm-to-affine-access,canonicalize,delinearize-indexing,canonicalize,simplify-affine-exprs,affine-cfg,canonicalize,func.func(affine-loop-invariant-code-motion),canonicalize,sort-memory,func.func(kernelcast),raise-affine-to-stablehlo{strip_llvm_debuginfo=$(compile_options.strip_llvm_debuginfo) prefer_while_raising=false dump_failed_lockstep=$(DUMP_FAILED_LOCKSTEP[])},canonicalize,arith-raise{stablehlo=true}"
-
-        if compile_options.optimization_passes !== :after_enzyme &&
-            compile_options.optimization_passes !== :only_enzyme
-            result = result * "," * opt_passes2
-
-            if DUS_TO_CONCAT[]
-                opt_passes3 = optimization_passes(
-                    compile_options;
-                    sroa=false,
-                    dus_to_concat=true,
-                    recognize_comms,
-                    lower_comms,
-                    backend,
-                    is_sharded,
-                )
-                result = result * "," * opt_passes3
-            end
-        end
-
-        result
-    else
-        "canonicalize"
+    function make_opt_passes2(deferred_loop_rewrites=nothing; dus_to_concat=false)
+        return optimization_passes(
+            compile_options;
+            sroa=false,
+            dus_to_concat,
+            recognize_comms,
+            lower_comms,
+            backend,
+            is_sharded,
+            deferred_loop_rewrites,
+        )
     end
+    opt_passes2 = make_opt_passes2()
+
+    function make_raise_passes(deferred_loop_rewrites=nothing; include_opts=true)
+        return if raise isa String
+            # Raising passes were specified
+            raise
+        elseif raise
+
+            # Raise enabled but use default passes
+            # TODO(#2240) remove redundant libdevice raise after fixing phase ordering
+            result = "canonicalize,llvm-to-memref-access,canonicalize,convert-llvm-to-cf,canonicalize,enzyme-lift-cf-to-scf,canonicalize,func.func(canonicalize-loops{speculate_partial_if=$(compile_options.speculate_partial_ifs)}),canonicalize-scf-for,canonicalize,libdevice-funcs-raise,canonicalize,affine-cfg,canonicalize,func.func(canonicalize-loops{speculate_partial_if=$(compile_options.speculate_partial_ifs)}),canonicalize,llvm-to-affine-access,canonicalize,delinearize-indexing,canonicalize,simplify-affine-exprs,affine-cfg,canonicalize,func.func(affine-loop-invariant-code-motion),canonicalize,sort-memory,func.func(kernelcast),raise-affine-to-stablehlo{strip_llvm_debuginfo=$(compile_options.strip_llvm_debuginfo) prefer_while_raising=false dump_failed_lockstep=$(DUMP_FAILED_LOCKSTEP[])},canonicalize,arith-raise{stablehlo=true}"
+
+            if include_opts &&
+                compile_options.optimization_passes !== :after_enzyme &&
+                compile_options.optimization_passes !== :only_enzyme
+                result = result * "," * make_opt_passes2(deferred_loop_rewrites)
+
+                if DUS_TO_CONCAT[]
+                    opt_passes3 = make_opt_passes2(
+                        deferred_loop_rewrites; dus_to_concat=true
+                    )
+                    result = result * "," * opt_passes3
+                end
+            end
+
+            result
+        else
+            "canonicalize"
+        end
+    end
+    raise_passes = make_raise_passes()
 
     blas_int_width = sizeof(BlasInt) * 8
     lower_enzymexla_linalg_pass = join(
@@ -457,21 +465,55 @@ Base.@nospecializeinfer function compile_mlir!(
                 ",",
             ),
             compile_options.optimization_passes === :after_enzyme ? "" : opt_passes2,
-            join(
-                vcat(
-                    String[
-                        opt_passes2,
-                        "canonicalize",
-                        "remove-unnecessary-enzyme-ops",
-                        "enzyme-simplify-math",
-                        legalize_chlo_to_stablehlo...,
-                        opt_passes2,
-                    ],
-                    compile_options.raise_first ? String[] : raise_pass_list,
-                    String[lower_enzymexla_passes, jit],
-                ),
-                ",",
-            ),
+            (mod, phase_key) -> begin
+                run_lazy_loop_pipeline!(
+                    mod,
+                    deferred -> begin
+                        after_ad_opts = make_opt_passes2(deferred)
+                        join(
+                            String[
+                                after_ad_opts,
+                                "canonicalize",
+                                "remove-unnecessary-enzyme-ops",
+                                "enzyme-simplify-math",
+                                legalize_chlo_to_stablehlo...,
+                                after_ad_opts,
+                            ],
+                            ",",
+                        )
+                    end,
+                    phase_key,
+                )
+                # Kernel raising and executable lowering run once. Only the
+                # generated optimization phases get the protected rewrite and
+                # static-cleanup sequence above.
+                if !compile_options.raise_first
+                    run_pass_pipeline!(
+                        mod,
+                        join([kern, make_raise_passes(; include_opts=false)], ","),
+                        phase_key * "_raise",
+                    )
+                    if raise isa Bool &&
+                        raise &&
+                        compile_options.optimization_passes !== :after_enzyme
+                        run_lazy_loop_pipeline!(
+                            mod,
+                            deferred -> begin
+                                passes = String[make_opt_passes2(deferred)]
+                                DUS_TO_CONCAT[] && push!(
+                                    passes,
+                                    make_opt_passes2(deferred; dus_to_concat=true),
+                                )
+                                join(passes, ",")
+                            end,
+                            phase_key * "_raised_opts",
+                        )
+                    end
+                end
+                run_pass_pipeline!(
+                    mod, join([lower_enzymexla_passes, jit], ","), phase_key * "_lower"
+                )
+            end,
             compile_options.optimization_passes === :after_enzyme ? "after_enzyme" : "all",
         )
     elseif compile_options.optimization_passes === :before_kernel
@@ -745,14 +787,19 @@ Base.@nospecializeinfer function compile_mlir!(
             is_sharded,
             raise_shlo_to_blas_lapack=false,
         )
-        opt_passes_down = optimization_passes(
-            Reactant.__compile_options_with_reversed_propagation(compile_options);
-            common_kwargs...,
-        )
-        opt_passes_up = optimization_passes(compile_options; common_kwargs...)
-        run_pass_pipeline!(
+        run_lazy_loop_pipeline!(
             mod,
-            join([opt_passes_down, opt_passes_up, opt_passes_down], ","),
+            deferred -> begin
+                opt_passes_down = optimization_passes(
+                    Reactant.__compile_options_with_reversed_propagation(compile_options);
+                    common_kwargs...,
+                    deferred_loop_rewrites=deferred,
+                )
+                opt_passes_up = optimization_passes(
+                    compile_options; common_kwargs..., deferred_loop_rewrites=deferred
+                )
+                join([opt_passes_down, opt_passes_up, opt_passes_down], ",")
+            end,
             "post_op_transpose_reshape",
         )
     end
@@ -895,21 +942,30 @@ Base.@nospecializeinfer function compile_mlir!(
 
             # we just need the ops to potentially remove slices / paddings
             if compile_options.optimization_passes === :all
-                run_pass_pipeline!(
+                run_lazy_loop_pipeline!(
                     mod,
-                    join(
+                    deferred -> join(
                         [
-                            opt_passes,
+                            optimization_passes(
+                                compile_options;
+                                sroa=true,
+                                recognize_comms,
+                                lower_comms,
+                                backend,
+                                is_sharded,
+                                deferred_loop_rewrites=deferred,
+                            ),
                             "canonicalize",
                             "cse",
                             "canonicalize",
-                            opt_passes2,
-                            lower_enzymexla_passes,
-                            jit,
+                            make_opt_passes2(deferred),
                         ],
                         ",",
                     ),
                     "mid_pad_opts",
+                )
+                run_pass_pipeline!(
+                    mod, join([lower_enzymexla_passes, jit], ","), "mid_pad_lower"
                 )
             end
 
@@ -1316,6 +1372,7 @@ function compile_xla(
         # Drop some of our attributes
         run_pass_pipeline!(mod, "drop-unsupported-attributes", "drop_enzymexla_attributes")
 
+        preserve_loop_limits!(MLIR.IR.Operation(mod); singleton_only=true)
         preserve_lazy_branch_returns!(MLIR.IR.Operation(mod))
 
         # compile MLIR module to XLA executable

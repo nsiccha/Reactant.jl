@@ -33,6 +33,55 @@ module {
     @test Array(compiled(input)) == [1.0, 2.0]
 end
 
+@testset "Singleton loop protection proves entry and one-step exit" begin
+    IR = Reactant.MLIR.IR
+    Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
+        cases = (
+            (0, 1, 1, "LT", true),
+            (7, 8, 1, "LT", true),
+            (0, 1, 2, "LT", true),
+            (2, 1, -2, "GE", true),
+            (1, 1, 1, "EQ", true),
+            (0, 0, 1, "LT", false),
+            (16384, 1, -1, "GE", false),
+            (10, 1, -2, "GT", false),
+            (-7, 1, 2, "LT", false),
+            (0, 1, 0, "LT", false),
+            (typemax(Int64), typemax(Int64), 1, "LE", false),
+        )
+        for (start, limit, step, direction, singleton) in cases
+            source = """
+                module {
+                    func.func @loop() -> tensor<i64> {
+                        %start = stablehlo.constant dense<$start> : tensor<i64>
+                        %limit = stablehlo.constant dense<$limit> : tensor<i64>
+                        %step = stablehlo.constant dense<$step> : tensor<i64>
+                        %result = stablehlo.while(%i = %start) : tensor<i64>
+                        cond {
+                            %test = stablehlo.compare $direction, %i, %limit : (tensor<i64>, tensor<i64>) -> tensor<i1>
+                            stablehlo.return %test : tensor<i1>
+                        } do {
+                            %next = stablehlo.add %i, %step : tensor<i64>
+                            stablehlo.return %next : tensor<i64>
+                        }
+                        return %result : tensor<i64>
+                    }
+                }
+                """
+            mod = parse(IR.Module, source)
+            try
+                @test IR.verifyall(IR.Operation(mod))
+                function_op = first(first(first(IR.Operation(mod))))
+                block = first(IR.region(function_op, 1))
+                loop = only(op for op in block if IR.name(op) == "stablehlo.while")
+                @test Reactant.Compiler.is_singleton_loop(loop) == singleton
+            finally
+                IR.dispose(mod)
+            end
+        end
+    end
+end
+
 @testset "Shared integer expressions have bounded evaluation cost" begin
     IR = Reactant.MLIR.IR
     Reactant.MLIR.IR.@with_context Reactant.ReactantContext() begin
@@ -124,6 +173,7 @@ function lane_guard(x)
     end
     return result
 end
+
 lane_batch(x) = sum(only(Reactant.Ops.batch(lane_guard, [x], Int64[length(x)])))
 lane_gradient(x) = only(Enzyme.gradient(Enzyme.Reverse, Enzyme.Const(lane_batch), x))
 traced(x::Number) = Reactant.to_rarray(x; track_numbers=true)
@@ -310,4 +360,51 @@ end
         previous_batch === nothing || @test batchpair == previous_batch
         previous_batch = batchpair
     end
+end
+
+@testset "Default singleton scalar loops keep their guarded body" begin
+    reverse(x, s) = lazy_gradient(retained_lazy_loop, x, s)
+    for n in (1, 2, 3)
+        values = fill(0.5, n)
+        x, s = traced(values), traced(2.0)
+        for (direction, fn) in (("primal", retained_lazy_loop), ("reverse", reverse))
+            compiled = Reactant.@compile serializable = true fn(x, s)
+            counts = inspect(compiled, "small-loop-$n-$direction")
+            @test get(counts, "while", 0) > 0
+            @test get(counts, "conditional", 0) > 0
+            for scale in (2.0, 0.7, -1.0, 0.0, NaN)
+                actual = host(compiled(x, traced(scale)))
+                if direction == "primal"
+                    @test actual ≈ (scale > 0 ? n * log(scale) + sum(values) / scale : -2n)
+                else
+                    dx, ds = actual
+                    @test dx ≈ (scale > 0 ? fill(inv(scale), n) : zeros(n))
+                    @test ds ≈ (scale > 0 ? n / scale - sum(values) / scale^2 : 0.0)
+                end
+            end
+        end
+    end
+end
+
+@testset "Default lane reverse keeps static buffer-update information" begin
+    n = 1024
+    values = [iseven(i) ? 0.7 : -0.7 for i in 1:n]
+    x = traced(values)
+    compiled = Reactant.@compile serializable = true lane_gradient(x)
+    counts = inspect(compiled, "large-lane-$n-reverse")
+    @test counts["while"] == counts["conditional"] == 1
+    @test host(compiled(x)) ≈ [v > 0 ? inv(v) : 0.0 for v in values]
+    hlo = repr(only(Reactant.XLA.get_hlo_modules(compiled.exec)))
+    bodies = Set(m.captures[1] for m in eachmatch(r"\bbody=%?([\w.-]+)", hlo))
+    current = nothing
+    repeated_copies = String[]
+    for line in split(hlo, '\n')
+        header = match(r"^(ENTRY )?%?([\w.-]+) \(.*\) -> .* \{$", line)
+        if header !== nothing
+            current = header.captures[2]
+        elseif current in bodies && occursin("f64[$n]", line) && occursin(" copy(", line)
+            push!(repeated_copies, line)
+        end
+    end
+    @test isempty(repeated_copies)
 end
