@@ -48,12 +48,19 @@ end
             (-7, 1, 2, "LT", false),
             (0, 1, 0, "LT", false),
             (typemax(Int64), typemax(Int64), 1, "LE", false),
+            (nothing, 1, 1, "LT", false),
         )
         for (start, limit, step, direction, singleton) in cases
+            initialization = if start === nothing
+                "%start = stablehlo.add %unknown, %zero : tensor<i64>"
+            else
+                "%start = stablehlo.constant dense<$start> : tensor<i64>"
+            end
             source = """
                 module {
-                    func.func @loop() -> tensor<i64> {
-                        %start = stablehlo.constant dense<$start> : tensor<i64>
+                    func.func @loop(%unknown: tensor<i64>) -> tensor<i64> {
+                        %zero = stablehlo.constant dense<0> : tensor<i64>
+                        $initialization
                         %limit = stablehlo.constant dense<$limit> : tensor<i64>
                         %step = stablehlo.constant dense<$step> : tensor<i64>
                         %result = stablehlo.while(%i = %start) : tensor<i64>
@@ -61,6 +68,12 @@ end
                             %test = stablehlo.compare $direction, %i, %limit : (tensor<i64>, tensor<i64>) -> tensor<i1>
                             stablehlo.return %test : tensor<i1>
                         } do {
+                            %positive = stablehlo.compare GT, %unknown, %zero : (tensor<i64>, tensor<i64>) -> tensor<i1>
+                            %unused = "stablehlo.if"(%positive) ({
+                                stablehlo.return %step : tensor<i64>
+                            }, {
+                                stablehlo.return %zero : tensor<i64>
+                            }) : (tensor<i1>) -> tensor<i64>
                             %next = stablehlo.add %i, %step : tensor<i64>
                             stablehlo.return %next : tensor<i64>
                         }
@@ -75,6 +88,10 @@ end
                 block = first(IR.region(function_op, 1))
                 loop = only(op for op in block if IR.name(op) == "stablehlo.while")
                 @test Reactant.Compiler.is_singleton_loop(loop) == singleton
+                @test Reactant.Compiler.preserve_singleton_loop_predicates!(
+                    IR.Operation(mod)
+                ) == singleton
+                @test IR.verifyall(IR.Operation(mod))
             finally
                 IR.dispose(mod)
             end
@@ -437,44 +454,53 @@ end
 end
 
 @testset "Singleton guard dependence uses the changing carried integer" begin
-    for start in (0, 7)
-        limit = start + 1
+    for (start, limit, step, direction) in
+        ((0, 1, 1, "LT"), (7, 8, 1, "LT"), (0, 1, 2, "LT"), (2, 1, -2, "GE"))
         source = """
             module {
-                func.func @main(%x: tensor<f64>) -> tensor<f64> {
+                func.func @main(%x: tensor<f64>) -> (tensor<f64>, tensor<i64>) {
                     %limit = stablehlo.constant dense<$limit> : tensor<i64>
                     %start = stablehlo.constant dense<$start> : tensor<i64>
-                    %one = stablehlo.constant dense<1> : tensor<i64>
+                    %step = stablehlo.constant dense<$step> : tensor<i64>
                     %zero = stablehlo.constant dense<0.0> : tensor<f64>
                     %result:3 = stablehlo.while(%bound = %limit, %index = %start, %last = %zero) : tensor<i64>, tensor<i64>, tensor<f64>
                     cond {
-                        %more = stablehlo.compare LT, %index, %bound : (tensor<i64>, tensor<i64>) -> tensor<i1>
+                        %more = stablehlo.compare $direction, %index, %bound : (tensor<i64>, tensor<i64>) -> tensor<i1>
                         stablehlo.return %more : tensor<i1>
                     } do {
                         %positive = stablehlo.compare GT, %x, %zero : (tensor<f64>, tensor<f64>) -> tensor<i1>
                         %value = "stablehlo.if"(%positive) ({
                             %log = stablehlo.log %x : tensor<f64>
-                            stablehlo.return %log : tensor<f64>
+                            %offset = stablehlo.convert %index : (tensor<i64>) -> tensor<f64>
+                            %shifted = stablehlo.add %log, %offset : tensor<f64>
+                            stablehlo.return %shifted : tensor<f64>
                         }, {
                             stablehlo.return %zero : tensor<f64>
                         }) : (tensor<i1>) -> tensor<f64>
-                        %next = stablehlo.add %index, %one : tensor<i64>
+                        %next = stablehlo.add %index, %step : tensor<i64>
                         stablehlo.return %bound, %next, %value : tensor<i64>, tensor<i64>, tensor<f64>
                     }
-                    return %result#2 : tensor<f64>
+                    return %result#2, %result#1 : tensor<f64>, tensor<i64>
                 }
             }
             """
-        primal = x -> only(Reactant.Ops.hlo_call(source, x))
+        primal = x -> first(Reactant.Ops.hlo_call(source, x))
         reverse = x -> only(Enzyme.gradient(Enzyme.Reverse, Enzyme.Const(primal), x))
+        state = x -> Reactant.Ops.hlo_call(source, x)
         input = traced(0.5)
-        for (label, fn) in (("primal", primal), ("reverse", reverse))
+        for (label, fn) in (("primal", primal), ("reverse", reverse), ("state", state))
             compiled = Reactant.@compile serializable = true fn(input)
             for value in (0.5, 1.5, -0.5, 0.0, NaN)
-                expected = value > 0 ? (label == "primal" ? log(value) : inv(value)) : 0.0
-                @test host(compiled(traced(value))) ≈ expected rtol = 2e-10 atol = 2e-10
+                expected =
+                    value > 0 ? (label == "reverse" ? inv(value) : log(value) + start) : 0.0
+                actual = host(compiled(traced(value)))
+                if label == "state"
+                    @test last(actual) == start + step
+                    actual = first(actual)
+                end
+                @test actual ≈ expected rtol = 2e-10 atol = 2e-10
             end
-            counts = inspect(compiled, "singleton-carried-$(start)-$(label)")
+            counts = inspect(compiled, "singleton-carried-$(start)-$(step)-$(label)")
             @test get(counts, "while", 0) > 0
             @test get(counts, "conditional", 0) > 0
         end

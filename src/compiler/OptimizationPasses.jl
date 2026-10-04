@@ -397,6 +397,102 @@ function singleton_loop_induction_variable(op)
     return nothing
 end
 
+# Enzyme's loop cache lowering uses a zero-based unit-step counter. For a
+# proven single iteration, normalize the selected integer state to that
+# counter while preserving its original value in the body and its original
+# final result. Other condition operations still see the original entry/exit
+# values. No data-dependent state or iteration count is changed.
+function normalize_singleton_induction!(op, index)
+    position = MLIR.IR.block_arg_num(index) + 1
+    initial = constant_loop_limit(MLIR.IR.operand(op, position); through_loop_limits=true)
+    body = first(MLIR.IR.region(op, 2))
+    constants = Dict{MLIR.IR.Value,Any}(
+        MLIR.IR.argument(body, i) => constant_loop_limit(value; through_loop_limits=true)
+        for (i, value) in enumerate(MLIR.IR.operands(op))
+    )
+    updated = constant_loop_limit(
+        MLIR.IR.operand(MLIR.IR.terminator(body), position),
+        constants;
+        through_loop_limits=true,
+    )
+    initial == 0 && updated == 1 && return index
+    ty = MLIR.IR.type(index)
+    parent = MLIR.IR.block(op)
+    function integer_constant(value)
+        constant = MLIR.IR.create_operation_common(
+            "stablehlo.constant",
+            MLIR.IR.location(op);
+            results=[ty],
+            operands=MLIR.IR.Value[],
+            attributes=[
+                MLIR.IR.NamedAttribute(
+                    "value", fill(MLIR.IR.Attribute(value, eltype(ty)), ty)
+                ),
+            ],
+            result_inference=false,
+        )
+        MLIR.IR.insert_before!(parent, op, constant)
+        return MLIR.IR.result(constant, 1)
+    end
+    zero, one = integer_constant(0), integer_constant(1)
+    entry, exit = integer_constant(initial), integer_constant(updated)
+    MLIR.API.mlirValueReplaceAllUsesOfWith(index, entry)
+    MLIR.API.mlirValueReplaceAllUsesOfWith(MLIR.IR.result(op, position), exit)
+    MLIR.IR.setoperand!(op, position, zero)
+    condition = first(first(op))
+    counter = MLIR.IR.argument(condition, position)
+    anchor = first(condition)
+    first_iteration = MLIR.IR.create_operation_common(
+        "stablehlo.compare",
+        MLIR.IR.location(op);
+        results=[MLIR.IR.TensorType(Int[], MLIR.IR.Type(Bool))],
+        operands=[counter, zero],
+        attributes=[
+            MLIR.IR.NamedAttribute(
+                "comparison_direction",
+                parse(MLIR.IR.Attribute, "#stablehlo<comparison_direction EQ>"),
+            ),
+        ],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(condition, anchor, first_iteration)
+    original = MLIR.IR.create_operation_common(
+        "stablehlo.select",
+        MLIR.IR.location(op);
+        results=[ty],
+        operands=[MLIR.IR.result(first_iteration, 1), entry, exit],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(condition, anchor, original)
+    MLIR.API.mlirValueReplaceAllUsesOfWith(counter, MLIR.IR.result(original, 1))
+    MLIR.IR.setoperand!(first_iteration, 1, counter)
+    more = MLIR.IR.create_operation_common(
+        "stablehlo.compare",
+        MLIR.IR.location(op);
+        results=[MLIR.IR.TensorType(Int[], MLIR.IR.Type(Bool))],
+        operands=[counter, one],
+        attributes=[
+            MLIR.IR.NamedAttribute(
+                "comparison_direction",
+                parse(MLIR.IR.Attribute, "#stablehlo<comparison_direction LT>"),
+            ),
+        ],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(condition, MLIR.IR.terminator(condition), more)
+    MLIR.IR.setoperand!(MLIR.IR.terminator(condition), 1, MLIR.IR.result(more, 1))
+    next = MLIR.IR.create_operation_common(
+        "stablehlo.add",
+        MLIR.IR.location(op);
+        results=[ty],
+        operands=[index, one],
+        result_inference=false,
+    )
+    MLIR.IR.insert_before!(body, MLIR.IR.terminator(body), next)
+    MLIR.IR.setoperand!(MLIR.IR.terminator(body), position, MLIR.IR.result(next, 1))
+    return index
+end
+
 function depend_singleton_guards_on_induction!(op, equality)
     for region in op, block in region, child in collect(block)
         if MLIR.IR.name(child) == "stablehlo.if"
@@ -431,6 +527,7 @@ function preserve_singleton_loop_predicates!(op)
     MLIR.IR.getattr(op, "reactant.singleton_predicate") !== nothing && return true
     index = singleton_loop_induction_variable(op)
     index === nothing && return preserved
+    index = normalize_singleton_induction!(op, index)
     body = first(MLIR.IR.region(op, 2))
     anchor = first(body)
     barrier = MLIR.IR.create_operation_common(
