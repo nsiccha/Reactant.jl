@@ -454,16 +454,31 @@ end
 end
 
 @testset "Singleton guard dependence uses the changing carried integer" begin
-    for (start, limit, step, direction) in
-        ((0, 1, 1, "LT"), (7, 8, 1, "LT"), (0, 1, 2, "LT"), (2, 1, -2, "GE"))
+    for (start, limit, step, direction, leading_counter) in (
+        (0, 1, 1, "LT", false),
+        (7, 8, 1, "LT", false),
+        (0, 1, 2, "LT", false),
+        (2, 1, -2, "GE", false),
+        (7, 8, 1, "LT", true),
+    )
+        auxiliary_initial =
+            leading_counter ? "%aux0 = stablehlo.constant dense<0> : tensor<i64>" : ""
+        auxiliary_carried = leading_counter ? "%aux = %aux0, " : ""
+        auxiliary_type = leading_counter ? "tensor<i64>, " : ""
+        auxiliary_update =
+            leading_counter ? "%auxnext = stablehlo.add %aux, %step : tensor<i64>" : ""
+        auxiliary_result = leading_counter ? "%auxnext, " : ""
+        result_count = leading_counter ? 4 : 3
+        value_position, index_position = leading_counter ? (3, 2) : (2, 1)
         source = """
             module {
                 func.func @main(%x: tensor<f64>) -> (tensor<f64>, tensor<i64>) {
                     %limit = stablehlo.constant dense<$limit> : tensor<i64>
                     %start = stablehlo.constant dense<$start> : tensor<i64>
                     %step = stablehlo.constant dense<$step> : tensor<i64>
+                    $auxiliary_initial
                     %zero = stablehlo.constant dense<0.0> : tensor<f64>
-                    %result:3 = stablehlo.while(%bound = %limit, %index = %start, %last = %zero) : tensor<i64>, tensor<i64>, tensor<f64>
+                    %result:$result_count = stablehlo.while(%bound = %limit, $auxiliary_carried%index = %start, %last = %zero) : tensor<i64>, $auxiliary_type tensor<i64>, tensor<f64>
                     cond {
                         %more = stablehlo.compare $direction, %index, %bound : (tensor<i64>, tensor<i64>) -> tensor<i1>
                         stablehlo.return %more : tensor<i1>
@@ -478,9 +493,10 @@ end
                             stablehlo.return %zero : tensor<f64>
                         }) : (tensor<i1>) -> tensor<f64>
                         %next = stablehlo.add %index, %step : tensor<i64>
-                        stablehlo.return %bound, %next, %value : tensor<i64>, tensor<i64>, tensor<f64>
+                        $auxiliary_update
+                        stablehlo.return %bound, $auxiliary_result%next, %value : tensor<i64>, $auxiliary_type tensor<i64>, tensor<f64>
                     }
-                    return %result#2, %result#1 : tensor<f64>, tensor<i64>
+                    return %result#$value_position, %result#$index_position : tensor<f64>, tensor<i64>
                 }
             }
             """
@@ -500,7 +516,9 @@ end
                 end
                 @test actual ≈ expected rtol = 2e-10 atol = 2e-10
             end
-            counts = inspect(compiled, "singleton-carried-$(start)-$(step)-$(label)")
+            counts = inspect(
+                compiled, "singleton-carried-$(start)-$(step)-$(leading_counter)-$(label)"
+            )
             @test get(counts, "while", 0) > 0
             @test get(counts, "conditional", 0) > 0
         end

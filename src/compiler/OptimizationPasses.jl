@@ -415,7 +415,20 @@ function normalize_singleton_induction!(op, index)
         constants;
         through_loop_limits=true,
     )
-    initial == 0 && updated == 1 && return index
+    condition = first(first(op))
+    compare = MLIR.IR.op_owner(MLIR.IR.operand(MLIR.IR.terminator(condition), 1))
+    direction = String(
+        MLIR.API.stablehloComparisonDirectionAttrGetValue(
+            MLIR.IR.getattr(compare, "comparison_direction")
+        ),
+    )
+    if initial == 0 &&
+        updated == 1 &&
+        direction == "LT" &&
+        MLIR.IR.operand(compare, 1) == MLIR.IR.argument(condition, position) &&
+        constant_loop_limit(MLIR.IR.operand(compare, 2); through_loop_limits=true) == 1
+        return index
+    end
     ty = MLIR.IR.type(index)
     parent = MLIR.IR.block(op)
     function integer_constant(value)
@@ -439,7 +452,6 @@ function normalize_singleton_induction!(op, index)
     MLIR.API.mlirValueReplaceAllUsesOfWith(index, entry)
     MLIR.API.mlirValueReplaceAllUsesOfWith(MLIR.IR.result(op, position), exit)
     MLIR.IR.setoperand!(op, position, zero)
-    condition = first(first(op))
     counter = MLIR.IR.argument(condition, position)
     anchor = first(condition)
     first_iteration = MLIR.IR.create_operation_common(
