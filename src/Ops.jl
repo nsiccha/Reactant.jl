@@ -2362,13 +2362,16 @@ end
     )
 end
 
+_loop_seed_value(x) = x
+_loop_seed_value(x::Base.RefValue) = typeof(x)(_loop_seed_value(x[]))
+
 @noinline function while_loop(
     cond_fn::CFn,
     body_fn::BFn,
     args...;
     track_numbers,
     verify_arg_names=nothing,
-    checkpointing=false,
+    checkpointing=nothing,
     mincut=false,
     location=mlir_stacktrace("while_loop", @__FILE__, @__LINE__),
 ) where {CFn,BFn}
@@ -2381,7 +2384,7 @@ end
 
     for (i, prev) in enumerate(args)
         @inbounds traced_args[i] = Reactant.make_tracer(
-            seen_args, prev, (), Reactant.NoStopTracedTrack; track_numbers
+            seen_args, _loop_seed_value(prev), (), Reactant.NoStopTracedTrack; track_numbers
         )
     end
 
@@ -2442,6 +2445,11 @@ end
         MLIR.IR.setattr!(while_op, "enzyme.disable_mincut", MLIR.IR.UnitAttribute())
     end
 
+    # A raw while loop has no statically known trip count. Its default reverse
+    # storage must have a fixed shape; explicit strategies keep their semantics.
+    if checkpointing === nothing
+        checkpointing = ReactantCore.Binomial(4)
+    end
     if checkpointing isa ReactantCore.Periodic
         MLIR.IR.setattr!(while_op, "enzyme.enable_checkpointing", MLIR.IR.Attribute(true))
         MLIR.IR.setattr!(
@@ -3900,6 +3908,29 @@ function triangular_solve(
                                                       dimensions"
 
     @assert transpose_a in ('N', 'T', 'C') "transpose_a must be one of 'N', 'T', or 'C'"
+    if T <: Real && N > 2
+        return only(batch(
+            (A, B) -> triangular_solve(
+                A, B; left_side, lower, transpose_a, unit_diagonal, location
+            ),
+            [a, b], collect(Int64, size(a)[1:(N - 2)]); location,
+        ))
+    elseif T <: Real
+        matrix = transpose_a == 'N' ? a : transpose(a, [2, 1])
+        triangular_lower = transpose_a == 'N' ? lower : !lower
+        if left_side
+            return call(
+                Reactant.TracedLinearAlgebra._triangular_solve_math,
+                matrix, b, Val(triangular_lower), Val(unit_diagonal); location,
+            )
+        else
+            return transpose(call(
+                Reactant.TracedLinearAlgebra._triangular_solve_math,
+                transpose(matrix, [2, 1]), transpose(b, [2, 1]), Val(!triangular_lower), Val(unit_diagonal);
+                location,
+            ), [2, 1])
+        end
+    end
     transpose_attr = MLIR.API.stablehloTransposeAttrGet(
         MLIR.IR.current_context(),
         if transpose_a == 'N'
@@ -3943,7 +3974,6 @@ Compute the row maximum pivoted LU factorization of `x` and return the factors `
     location=mlir_stacktrace("lu", @__FILE__, @__LINE__),
 ) where {T,pT}
     @assert ndims(x) >= 2
-
     output_shape = collect(Int64, size(x))
     batch_shape = output_shape[1:(end - 2)]
     pivots_shape = vcat(batch_shape, min(size(x, ndims(x) - 1), size(x, ndims(x))))

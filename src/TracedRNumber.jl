@@ -391,6 +391,64 @@ function Base.div(
     )
 end
 
+# Julia permits negative and oversized shift counts. Keep the sign/width
+# decisions lazy before converting a count to the value's element type.
+_shift_opposite(::Val{:left}, ::Type{T}) where {T<:Signed} = Val(:arithmetic)
+_shift_opposite(::Val{:left}, ::Type{T}) where {T<:Unsigned} = Val(:logical)
+_shift_opposite(::Union{Val{:arithmetic},Val{:logical}}, ::Type) = Val(:left)
+_shift_saturated(x, ::Union{Val{:left},Val{:logical}}) = zero(x)
+_shift_saturated(x::TracedRNumber{T}, ::Val{:arithmetic}) where {T} =
+    @opcall shift_right_arithmetic(x, Reactant.promote_to(TracedRNumber{T}, 8*sizeof(T)-1))
+_shift_nonnegative(x::TracedRNumber{T}, n, ::Val{:left}) where {T} =
+    @opcall shift_left(x, Reactant.promote_to(TracedRNumber{T}, n))
+_shift_nonnegative(x::TracedRNumber{T}, n, ::Val{:logical}) where {T} =
+    @opcall shift_right_logical(x, Reactant.promote_to(TracedRNumber{T}, n))
+_shift_nonnegative(x::TracedRNumber{T}, n, ::Val{:arithmetic}) where {T} =
+    @opcall shift_right_arithmetic(x, Reactant.promote_to(TracedRNumber{T}, n))
+
+function _integer_shift_nonnegative(x::TracedRNumber{T}, n, kind) where {T}
+    @trace result = if n >= 8*sizeof(T)
+        _shift_saturated(x, kind)
+    else
+        _shift_nonnegative(x, n, kind)
+    end
+    return result
+end
+
+function _integer_shift_negative(x::TracedRNumber{T}, n, kind) where {T}
+    @trace result = if n <= -8*sizeof(T)
+        _shift_saturated(x, kind)
+    else
+        _shift_nonnegative(x, -n, kind)
+    end
+    return result
+end
+
+function _integer_shift(x::TracedRNumber{T}, n, kind) where {T<:Union{Signed,Unsigned}}
+    if unwrapped_eltype(n) <: Unsigned
+        return _integer_shift_nonnegative(x, n, kind)
+    end
+    opposite = _shift_opposite(kind, T)
+    @trace result = if n < 0
+        _integer_shift_negative(x, n, opposite)
+    else
+        _integer_shift_nonnegative(x, n, kind)
+    end
+    return result
+end
+
+for (shift, kind) in ((:<<, :left), (:>>, :arithmetic), (:>>>, :logical))
+    @eval begin
+        function Base.$shift(x::TracedRNumber{T}, n::Union{Integer,TracedRNumber{<:Union{Signed,Unsigned}}}) where {T<:Union{Signed,Unsigned}}
+            selected = $(QuoteNode(kind)) === :arithmetic && T <: Unsigned ? Val(:logical) : Val($(QuoteNode(kind)))
+            return _integer_shift(x, n, selected)
+        end
+        function Base.$shift(x::Union{Signed,Unsigned}, n::TracedRNumber{<:Union{Signed,Unsigned}})
+            return Base.$shift(Reactant.promote_to(TracedRNumber{typeof(x)}, x), n)
+        end
+    end
+end
+
 function Base.div(@nospecialize(lhs::TracedRNumber{T}), rhs) where {T}
     return @opcall divide(lhs, Reactant.promote_to(TracedRNumber{T}, rhs))
 end

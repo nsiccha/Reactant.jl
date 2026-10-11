@@ -23,6 +23,7 @@ using Reactant_jll: Reactant_jll
 
 include("Macros.jl")
 include("CompilationError.jl")
+include("ConditionLoops.jl")
 include("OptimizationPasses.jl")
 include("Codegen.jl")
 include("Thunk.jl")

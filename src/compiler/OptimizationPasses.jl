@@ -220,6 +220,9 @@ function run!(pm::MLIR.IR.PassManager, op, key::String="")
 end
 
 function run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
+    if occursin("enzyme{", pass_pipeline)
+        normalize_condition_loops!(mod)
+    end
     pm = MLIR.IR.PassManager()
     id = nothing
     try

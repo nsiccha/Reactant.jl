@@ -43,9 +43,11 @@ end
 end
 
 @inline function traced_getfield(
-    @nospecialize(obj::Array{<:Union{ConcretePJRTNumber,ConcreteIFRTNumber,TracedRNumber}}),
+    @nospecialize(obj::Array),
     field,
 )
+    # Paths collected from a host array address its elements, including when a
+    # branch tracks plain captured constants alongside existing traced leaves.
     return Base.getindex(obj, field)
 end
 

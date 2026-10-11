@@ -274,12 +274,12 @@ end
 The behavior of loops can be configured with the following configuration options:
 
  - `track_numbers::Union{Bool,DataType} = true` - whether Julia numbers should be automatically promoted to traced numbers upon entering the loop.
- - `checkpointing::Union{Bool,Periodic,Binomial} = false` - whether or not to enable checkpointing when performing reverse mode differentiation. Can be `false` (default), `true` (automatic checkpointing), or `Periodic(n)` to specify `n` checkpoints. When `true` is used, defaults to `isqrt(num_iters)` checkpoints for `for` loops with static (non-traced) bounds. `Periodic(n)` must be used for `while` loops or `for` loops with dynamic (traced) bounds when checkpointing is enabled.
- - `mincut::Bool = false` - whether or not to enable the mincut algorithm when performing reverse mode differentiation (default: `false`).
+ - `checkpointing::Union{Nothing,Bool,Periodic,Binomial} = nothing` - configure storage during reverse mode differentiation. By default, loops use `Binomial(4)` to keep storage independent of the iteration count. Explicit `false` disables checkpointing. `true` uses `Periodic(isqrt(num_iters))` for static `for` bounds. `Periodic(n)` and `Binomial(n)` explicitly select a checkpoint strategy for either loop kind.
+ - `mincut::Bool = false` - whether or not to enable the mincut algorithm when performing reverse mode differentiation.
 """
 macro trace(args...)
     track_numbers = true
-    checkpointing = false
+    checkpointing = nothing
     mincut = false
 
     expr = first(args)
@@ -312,7 +312,10 @@ macro trace(args...)
             $(track_numbers)::DataType
         end
     )
-    expr = macroexpand(__module__, expr)
+    # Nested @trace invocations own their control-flow scopes.
+    if Meta.isexpr(expr, :macrocall)
+        expr = macroexpand(__module__, expr; recursive=false)
+    end
 
     #! format: off
     if @capture(
@@ -337,7 +340,7 @@ macro trace(args...)
 
     if Meta.isexpr(expr, :(=))
         if Meta.isexpr(expr.args[2], :if)
-            return esc(mark_traced(trace_if_with_returns(expr; track_numbers)))
+            return esc(mark_traced(trace_if_with_returns(__module__, expr; track_numbers)))
         end
     end
 
@@ -350,7 +353,7 @@ macro trace(args...)
         return esc(mark_traced(trace_call(__module__, call)))
     end
 
-    Meta.isexpr(expr, :if) && return esc(mark_traced(trace_if(expr; track_numbers)))
+    Meta.isexpr(expr, :if) && return esc(mark_traced(trace_if(__module__, expr; track_numbers)))
 
     Meta.isexpr(expr, :for) && return esc(
         mark_traced(trace_for(__module__, expr; track_numbers, checkpointing, mincut))
@@ -492,8 +495,8 @@ function trace_while(mod, expr; track_numbers, mincut, checkpointing, first_arg=
         )
     end
 
-    cond_symbols = ExpressionExplorer.compute_symbols_state(cond)
-    body_symbols = ExpressionExplorer.compute_symbols_state(body)
+    cond_symbols = trace_symbols(mod, cond)
+    body_symbols = trace_symbols(mod, body)
 
     external_syms = Symbol[]
     if !isnothing(first_arg)
@@ -515,9 +518,10 @@ function trace_while(mod, expr; track_numbers, mincut, checkpointing, first_arg=
 
     all_syms = Expr(:tuple, external_syms...)
     args_names = Expr(:tuple, external_syms...)
+    assigned_syms = union(body_symbols.assignments, nested_trace_assignments(body))
 
     function loop_init_val(s)
-        s ∈ body_symbols.assignments || return :(@isdefined($s) ? $s : nothing)
+        s ∈ assigned_syms || return :(@isdefined($s) ? $s : nothing)
         return :(
             if $(Expr(:islocal, s)) && @isdefined($s)
                 $s
@@ -531,6 +535,7 @@ function trace_while(mod, expr; track_numbers, mincut, checkpointing, first_arg=
         )
     end
     args_init = Expr(:tuple, (:(Ref{Any}($(loop_init_val(s)))) for s in external_syms)...)
+    cond_val(s) = :(@isdefined($s) ? $s : nothing)
 
     ref_syms = Symbol[Symbol(string(sym), "_ref") for sym in external_syms]
     arg_syms = Expr(:tuple, ref_syms...)
@@ -548,7 +553,6 @@ function trace_while(mod, expr; track_numbers, mincut, checkpointing, first_arg=
     cond_fn_sym = gensym(:cond_fn)
     args_sym = gensym(:args)
 
-    assigned_syms = body_symbols.assignments
     rebind_outputs = [
         quote
             if !isnothing($(args_sym)[$i][])
@@ -670,7 +674,8 @@ function trace_for(mod, expr; track_numbers, checkpointing, mincut)
     end
 
     # Compute checkpointing value:
-    # - If checkpointing is false/nothing → false
+    # - If checkpointing is false → false
+    # - If checkpointing is nothing → Binomial(4)
     # - If checkpointing is Periodic(n) → Periodic(n)
     # - If checkpointing is true → compute Periodic(isqrt(num_iters))
     # This must be computed BEFORE bounds are promoted to traced values
@@ -690,6 +695,11 @@ function trace_for(mod, expr; track_numbers, checkpointing, mincut)
                 isqrt(div($limit_sym - $start_sym, $step_sym) + 1)
             )
         end
+    elseif checkpointing === nothing
+        # StableHLO has no fixed-trip-count for operation. Even source-static
+        # bounds become while loops whose reverse may otherwise grow a tape.
+        # A fixed budget preserves the loop with ordinary generated reverse.
+        :($checkpointing_sym = $(Binomial)(4))
     elseif checkpointing === false
         :($checkpointing_sym = false)
     else
@@ -737,9 +747,9 @@ function trace_for(mod, expr; track_numbers, checkpointing, mincut)
 end
 
 # ... = if ... style expressions
-function trace_if_with_returns(expr; track_numbers)
+function trace_if_with_returns(mod, expr; track_numbers)
     new_expr, _, all_check_vars = trace_if(
-        expr.args[2]; store_last_line=expr.args[1], depth=1, track_numbers
+        mod, expr.args[2]; store_last_line=expr.args[1], depth=1, track_numbers
     )
     cond_name = first(all_check_vars)
     original_cond = expr.args[2].args[1]
@@ -754,7 +764,7 @@ function trace_if_with_returns(expr; track_numbers)
     end
 end
 
-function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
+function trace_if(mod, expr; store_last_line=nothing, depth=0, track_numbers)
     discard_vars_from_expansion = []
     original_expr = expr
     depth == 0 && error_if_any_control_flow(expr)
@@ -762,8 +772,11 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
     expand_nested =
         x -> begin
             is_traced_expansion(x) && return x
+            if x isa Expr && x.head in (:macrocall, :function, :(->), :quote, :inert)
+                return x
+            end
             if x isa Expr && x.head == :if
-                ex_new, dv, _ = trace_if(x; store_last_line, depth=depth + 1, track_numbers)
+                ex_new, dv, _ = trace_if(mod, x; store_last_line, depth=depth + 1, track_numbers)
                 append!(discard_vars_from_expansion, dv)
                 return ex_new
             end
@@ -779,7 +792,7 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
 
     expr_args = filter(a -> !isa(a, Core.LineNumberNode), expr.args)
     cond_expr = remove_shortcircuiting(expr_args[1])
-    condition_vars = [ExpressionExplorer.compute_symbols_state(cond_expr).references...]
+    condition_vars = [trace_symbols(mod, cond_expr).references...]
 
     true_block = if store_last_line !== nothing
         if expr_args[2] isa Expr
@@ -802,20 +815,28 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
         end
     end
 
-    true_branch_symbols = ExpressionExplorer.compute_symbols_state(original_expr.args[2])
+    true_branch_symbols = trace_symbols(mod, original_expr.args[2])
     true_branch_input_list = [true_branch_symbols.references...]
+    # A locally passed callable may capture traced values. Carry it through
+    # the branch arguments so each arm receives its own traced environment.
+    for fn in true_branch_symbols.funccalls
+        if length(fn.parts) == 1 && !isdefined(mod, only(fn.parts))
+            union!(true_branch_input_list, fn.parts)
+        end
+    end
     filter!(x -> x ∉ SPECIAL_SYMBOLS && !is_gensym(x), true_branch_input_list)
     true_branch_assignments = [
-        ExpressionExplorer.compute_symbols_state(true_block).assignments...
+        trace_symbols(mod, true_block).assignments...
     ]
-    filter!(!is_gensym, true_branch_assignments)
+    # Generated locals can hold traced values created by a nested @trace.
+    # They still need branch results, even though they are not branch inputs.
     true_branch_fn_name = gensym(:true_branch)
 
     else_block, discard_vars, _ = if length(expr_args) == 3
         if !(expr_args[3] isa Expr) || expr_args[3].head != :elseif
             expr_args[3], [], nothing
         else
-            trace_if(expr_args[3]; store_last_line, depth=depth + 1, track_numbers)
+            trace_if(mod, expr_args[3]; store_last_line, depth=depth + 1, track_numbers)
         end
     elseif length(expr_args) == 2
         tmp_expr = []
@@ -850,15 +871,21 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
         end
     end
 
-    false_branch_symbols = ExpressionExplorer.compute_symbols_state(
-        length(original_expr.args) > 2 ? original_expr.args[3] : Expr(:block)
+    false_branch_symbols = trace_symbols(
+        mod, length(original_expr.args) > 2 ? original_expr.args[3] : Expr(:block)
     )
     false_branch_input_list = [false_branch_symbols.references...]
+    # A locally passed callable may capture traced values. Carry it through
+    # the branch arguments so each arm receives its own traced environment.
+    for fn in false_branch_symbols.funccalls
+        if length(fn.parts) == 1 && !isdefined(mod, only(fn.parts))
+            union!(false_branch_input_list, fn.parts)
+        end
+    end
     filter!(x -> x ∉ SPECIAL_SYMBOLS && !is_gensym(x), false_branch_input_list)
     false_branch_assignments = [
-        ExpressionExplorer.compute_symbols_state(false_block).assignments...
+        trace_symbols(mod, false_block).assignments...
     ]
-    filter!(!is_gensym, false_branch_assignments)
     false_branch_fn_name = gensym(:false_branch)
 
     all_input_vars = unique(true_branch_input_list ∪ false_branch_input_list)
@@ -868,11 +895,12 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
     all_vars = unique(all_input_vars ∪ all_output_vars)
 
     result_sym = gensym(:if_result)
+    branch_args_sym = gensym(:branch_args)
 
     true_branch_fn = :(
-        (args,) -> begin
-            $([:($v = if hasproperty(args, $(QuoteNode(v)))
-                        getproperty(args, $(QuoteNode(v)))
+        ($(branch_args_sym),) -> begin
+            $([:($v = if hasproperty($(branch_args_sym), $(QuoteNode(v)))
+                        getproperty($(branch_args_sym), $(QuoteNode(v)))
                     else
                         $(MissingTracedValue)()
                     end) for v in all_vars]...)
@@ -886,9 +914,9 @@ function trace_if(expr; store_last_line=nothing, depth=0, track_numbers)
     true_branch_fn = :($(true_branch_fn_name) = $(true_branch_fn))
 
     false_branch_fn = :(
-        (args,) -> begin
-            $([:($v = if hasproperty(args, $(QuoteNode(v)))
-                        getproperty(args, $(QuoteNode(v)))
+        ($(branch_args_sym),) -> begin
+            $([:($v = if hasproperty($(branch_args_sym), $(QuoteNode(v)))
+                        getproperty($(branch_args_sym), $(QuoteNode(v)))
                     else
                         $(MissingTracedValue)()
                     end) for v in all_vars]...)
@@ -1015,17 +1043,83 @@ end
 
 const CONTROL_FLOW_EXPRS = Symbol[:return, :break, :continue, :symbolicgoto, :macrocall]
 
-error_if_any_control_flow(_) = nothing
-function error_if_any_control_flow(expr::Expr)
+_trace_macro_name(x::Symbol) = x
+_trace_macro_name(x::GlobalRef) = x.name
+_trace_macro_name(x::QuoteNode) = x.value
+_trace_macro_name(x::Expr) = x.head === :(.) ? _trace_macro_name(x.args[end]) : nothing
+_trace_macro_name(x) = nothing
+
+# ExpressionExplorer treats macro bodies as opaque. For liveness, inspect the
+# source body of nested @trace invocations, without adding their generated
+# implementation locals to the enclosing control-flow region.
+function trace_symbols_expr(mod, expr)
+    expr isa Expr || return expr
     MacroTools.isdef(expr) && return expr
-
-    head_idx = findfirst(==(expr.head), CONTROL_FLOW_EXPRS)
-    if !isnothing(head_idx)
-        head = CONTROL_FLOW_EXPRS[head_idx]
-        error("Cannot use @trace on a block that contains a $head statement")
+    if expr.head === :macrocall
+        if _trace_macro_name(expr.args[1]) === Symbol("@trace")
+            args = Any[]
+            for configuration in expr.args[3:(end - 1)]
+                push!(args, configuration isa Expr && configuration.head === :(=) ?
+                           configuration.args[2] : configuration)
+            end
+            push!(args, expr.args[end])
+            return trace_symbols_expr(mod, Expr(:block, args...))
+        end
+        # Expand other macros with Julia's complete hygiene handling. A single
+        # expansion can leave private macros from the defining module behind.
+        source = Expr(expr.head, map(arg -> trace_symbols_expr(mod, arg), expr.args)...)
+        return macroexpand(mod, source)
     end
+    expr.head in (:quote, :inert) && return expr
+    return Expr(expr.head, map(arg -> trace_symbols_expr(mod, arg), expr.args)...)
+end
 
-    return foreach(error_if_any_control_flow, expr.args)
+trace_symbols(mod, expr) =
+    ExpressionExplorer.compute_symbols_state(trace_symbols_expr(mod, expr))
+
+# ExpressionExplorer sees a nested traced loop's references but not assignments
+# made inside that loop. Those locals still need to be rebound from the Ref
+# carries after the enclosing traced loop executes.
+function nested_trace_assignments(expr)
+    assigned = Set{Symbol}()
+    function visit(x, inside_trace=false)
+        x isa Expr || return
+        MacroTools.isdef(x) && return
+        x.head in (:function, :(->), :quote, :inert) && return
+        if x.head === :macrocall
+            _trace_macro_name(x.args[1]) === Symbol("@trace") || return
+            # Earlier `key=value` arguments configure the macro; only its
+            # final argument is executable source that can rebind a caller.
+            visit(x.args[end], true)
+            return
+        end
+        if inside_trace && x.head in (:(=), :+=, :-=, :*=, :/=, ://=, :^=)
+            x.args[1] isa Symbol && push!(assigned, x.args[1])
+        end
+        foreach(arg -> visit(arg, inside_trace), x.args)
+    end
+    visit(expr)
+    return assigned
+end
+
+function error_if_any_control_flow(expr)
+    expr isa Expr || return expr
+    MacroTools.isdef(expr) && return expr
+    # Returns in a nested function belong to that function. Nested @trace
+    # expansions introduce such closures, so inspect only the current scope.
+    expr.head in (:function, :(->), :quote, :inert) && return expr
+    if expr.head === :macrocall
+        name = _trace_macro_name(expr.args[1])
+        if name === Symbol("@trace") || name === Symbol("@allowscalar")
+            foreach(error_if_any_control_flow, expr.args[3:end])
+            return expr
+        end
+    end
+    if expr.head in CONTROL_FLOW_EXPRS
+        error("Cannot use @trace on a block that contains a $(expr.head) statement")
+    end
+    foreach(error_if_any_control_flow, expr.args)
+    return expr
 end
 
 """

@@ -6,6 +6,90 @@ struct BatchedLU{T,S<:AbstractArray,P<:AbstractArray,I<:Union{AbstractArray,Numb
     info::I
 end
 
+_factorization_index(::Type{P}, i::Integer) where {P} = P(i)
+_factorization_index(::Type{P}, i::TracedRNumber) where {P} =
+    promote_to(TracedRNumber{P}, i)
+
+# A primal decomposition of pivoted LU into scalar/tensor operations. Keeping
+# this graph visible lets ordinary reverse differentiate the computation; no
+# derivative rule or activity override is needed for the factorization.
+function _lu_math(A::AbstractMatrix, ::Type{P}) where {P}
+    pivot_type = P
+    F = copy(A)
+    m, n = size(F)
+    permutation = similar(F, P, m)
+    permutation .= collect(P, 1:m)
+    pivots = similar(F, P, min(m,n))
+    fill!(pivots, zero(P))
+    info = zero(P)
+    @allowscalar begin
+        @trace for k in 1:min(m,n)
+            pivot = _factorization_index(pivot_type, k)
+            largest = abs(F[k,k])
+            @trace for row in (k+1):m
+                magnitude = abs(F[row,k])
+                @trace if magnitude > largest
+                    pivot = _factorization_index(pivot_type, row)
+                    largest = magnitude
+                end
+            end
+            pivots[k] = pivot
+            old_row = copy(F[k,:])
+            F[k,:] = F[pivot,:]
+            F[pivot,:] = old_row
+            old_permutation = permutation[k]
+            permutation[k] = permutation[pivot]
+            permutation[pivot] = old_permutation
+            diagonal = F[k,k]
+            @trace if !iszero(diagonal)
+                @trace for row in (k+1):m
+                    F[row,k] = F[row,k] / diagonal
+                end
+                @trace for column in (k+1):n
+                    @trace for row in (k+1):m
+                        F[row,column] = F[row,column] - F[row,k]*F[k,column]
+                    end
+                end
+            else
+                @trace if iszero(info)
+                    info = _factorization_index(pivot_type, k)
+                end
+            end
+        end
+    end
+    return F, pivots, permutation, info
+end
+
+function _lu_solve_math(A::AbstractMatrix, B::AbstractMatrix)
+    factors, pivots, permutation, info = @opcall call(_lu_math, A, Int32)
+    return BatchedLU(factors, pivots, permutation, info) \ B
+end
+
+_triangular_rows(::Val{true}, n) = 1:n
+_triangular_rows(::Val{false}, n) = n:-1:1
+_triangular_terms(::Val{true}, i, n) = 1:(i-1)
+_triangular_terms(::Val{false}, i, n) = (i+1):n
+_triangular_diagonal(::Val{true}, A, value, i) = value
+_triangular_diagonal(::Val{false}, A, value, i) = value / A[i,i]
+
+function _triangular_solve_math(A::AbstractMatrix, B::AbstractMatrix, lower, unit)
+    X = copy(B)
+    n = size(A,1)
+    rows = _triangular_rows(lower, n)
+    @allowscalar begin
+        @trace for column in 1:size(B,2)
+            @trace for row in rows
+                value = X[row,column]
+                @trace for j in _triangular_terms(lower, row, n)
+                    value = value - A[row,j]*X[j,column]
+                end
+                X[row,column] = _triangular_diagonal(unit, A, value, row)
+            end
+        end
+    end
+    return X
+end
+
 Base.size(lu::BatchedLU) = size(lu.factors)
 Base.size(lu::BatchedLU, i::Integer) = size(lu.factors, i)
 Base.ndims(lu::BatchedLU) = ndims(lu.factors)

@@ -629,6 +629,17 @@ function Base._RepeatInnerOuter.repeat_inner(
 end
 
 # stack
+# Scalar tensor elements have no slice axes: Julia preserves the collection's
+# shape for dims=: and flattens it when the scalar stacking axis is explicit.
+function overloaded_stack(dims::Union{Integer,Colon}, xs::TracedRArray{T}) where {T<:Number}
+    isempty(xs) && throw(ArgumentError("`stack` on an empty collection is not allowed"))
+    if dims isa Colon
+        return copy(xs)
+    end
+    dims == 1 || throw(ArgumentError("cannot stack scalar slices along dims = $dims"))
+    return reshape(copy(xs), length(xs))
+end
+
 function overloaded_stack(dims::Union{Integer,Colon}, xs)
     dims = dims isa Colon ? nothing : dims
     res = []
