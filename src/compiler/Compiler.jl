@@ -277,16 +277,18 @@ Base.@nospecializeinfer function compile_mlir!(
 
     fnname = string(f)
     mlir_fn_res = try
-        Reactant.TracedUtils.make_mlir_fn(
-            f,
-            args,
-            fn_kwargs,
-            fnname,
-            true;
-            runtime,
-            compile_options.optimize_then_pad,
-            kwargs...,
-        )
+        Reactant.Profiler.@annotate "trace $fnname" begin
+            Reactant.TracedUtils.make_mlir_fn(
+                f,
+                args,
+                fn_kwargs,
+                fnname,
+                true;
+                runtime,
+                compile_options.optimize_then_pad,
+                kwargs...,
+            )
+        end
     finally
         deactivate_raising!(is_raising)
         deactivate_sdycache!(sdycache)
@@ -416,11 +418,20 @@ Base.@nospecializeinfer function compile_mlir!(
         ",",
     )
     lower_enzymexla_math_pass = "lower-enzymexla-math"
-    lower_enzymexla_mpi_pass = "lower-enzymexla-mpi{backend=$backend}"
-    lower_enzymexla_passes = join(
+    lower_enzymexla_mpi_pass = if backend == "cpu"
+        "lower-enzymexla-mpi{backend=cpu}"
+    elseif backend == "cuda"
+        default_comm_handle = Reactant.default_nccl_comm_handle()
+        "lower-enzymexla-mpi{backend=cuda ncclCommPtr=$default_comm_handle}"
+    else
+        # mpi only supported on cpu and cuda, don't run pass otherwise  
+        nothing
+    end
+    lower_enzymexla_passes = filter(
+        !isnothing,
         [lower_enzymexla_linalg_pass, lower_enzymexla_math_pass, lower_enzymexla_mpi_pass],
-        ",",
     )
+    lower_enzymexla_passes = join(lower_enzymexla_passes, ",")
 
     legalize_chlo_to_stablehlo =
         if legalize_stablehlo_to_mhlo || compile_options.legalize_chlo_to_stablehlo
@@ -1262,7 +1273,7 @@ function compile_xla(f, args; kwargs...)
     end
 end
 
-function compile_xla(
+Reactant.@annotate "compile $(string(f))" function compile_xla(
     ctx,
     f,
     args;
@@ -1348,16 +1359,18 @@ function compile_xla(
                 ),
             )
 
-            exec = XLA.compile(
-                client,
-                mod;
-                compile_options=xla_compile_options,
-                num_outputs=length(mlir_fn_res.linear_results),
-                num_parameters=length(mlir_fn_res.linear_args),
-                mlir_fn_res.is_sharded,
-                mlir_fn_res.num_replicas,
-                mlir_fn_res.num_partitions,
-            )
+            exec = Reactant.Profiler.@annotate "XLA compile $(string(f))" begin
+                XLA.compile(
+                    client,
+                    mod;
+                    compile_options=xla_compile_options,
+                    num_outputs=length(mlir_fn_res.linear_results),
+                    num_parameters=length(mlir_fn_res.linear_args),
+                    mlir_fn_res.is_sharded,
+                    mlir_fn_res.num_replicas,
+                    mlir_fn_res.num_partitions,
+                )
+            end
             hlo_modules = XLA.get_hlo_modules(exec)
             hlo_modules = length(hlo_modules) == 1 ? only(hlo_modules) : hlo_modules
         end
