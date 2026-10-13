@@ -49,7 +49,7 @@
         {
           "branch": "fix/reduce-pad-multiplicity",
           "commit": "f21a998c26dfb31ab6fb4901504540e6a0810e3b",
-          "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. Current frontend pins are metadata-only relative to the accepted build; artifact SHA256 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba."
+          "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. The 2026-10-02 accepted artifact SHA256 was 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba; the refreshed compiler sources require their own build and acceptance receipt."
         }
       ],
       "commit": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
@@ -79,7 +79,7 @@
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "bcd1a1c0256d99606e624b9e109d004abd1d620a",
+      "upstream_main": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
@@ -98,9 +98,9 @@
       ],
       "integration_notes": [
         "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default.",
-        "Adjoint gather intake includes upstream main collect(SubArray) and BUILD header cleanup. WORKSPACE conflict retains accepted dogfood Enzyme-JAX73ebe pin. Existing4a65 library is used for frontend acceptance; native BUILD changes await the next separately scoped combined build.",
-        "Retained provisional41919/a264 history and initial setup failure;77f005 corrects frontier findings. Retained4a65 compiled library with exact current Julia-source runtime checks; no native rebuild under this hunt.",
-        "2026-10-13 refresh (decision 1v379lx): merged upstream main bcd1a1c0 (0.2.292, Reactant_jll 0.0.418); only the WORKSPACE Enzyme-JAX pin conflicted."
+        "The adjoint-gather topic is retained. The 2026-10-13 refresh pins Enzyme-JAX 6143e730 and carries upstream Reactant.jl main through d2285670.",
+        "The 4a65db92 library and its source-only frontend acceptance are historical 2026-10-02 evidence; the refreshed stack is checked by a new gordito build and acceptance job.",
+        "The 2026-10-13 refresh merged upstream bcd1a1c0 (0.2.292, Reactant_jll 0.0.418), then d2285670 (#3430 norm fixes and #3431 VectorInterface strong-zero fix). The latter two commits touch Julia source and tests only; native build inputs are unchanged."
       ]
     },
     "Enzyme.jl": {
