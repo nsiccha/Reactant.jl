@@ -46,11 +46,14 @@ so upstream PRs remain independently reviewable.
 
 ## Native Enzyme.jl
 
-The opt-in project also pins Enzyme.jl and its bundled EnzymeCore to the exact
-Enzyme.jl source commit in `stack.json`. Its tuple-field repair, draft
-EnzymeAD/Enzyme.jl#3717, is part of the candidate, including the revision that
-computes dominance with LLVM's dominator tree. Rerun the repair's tests on the
-integrated commit after every refresh, on Julia 1.10 and 1.12.
+The opt-in project pins Enzyme.jl and its bundled EnzymeCore to the exact
+Enzyme.jl source commit in `stack.json`. This refresh retains the previously
+published Enzyme.jl tip. Its tuple-field repair, draft EnzymeAD/Enzyme.jl#3717,
+includes the revision that computes dominance with LLVM's dominator tree.
+ReactiveKernels excludes Enzyme_jll 0.0.302 after a Julia 1.10 native reverse
+crash, and the newer Enzyme.jl dogfood tip requires that binary. Revisit the
+Enzyme.jl line after a compatible native binary and Julia 1.10/1.12 tests are
+available.
 
 Enzyme.jl uses the native library from Enzyme_jll; it does not use Reactant's
 `libReactantExtra.so`. Start with the repair's tested Enzyme_jll 0.0.298+0 and
@@ -62,9 +65,7 @@ and verified independently, following Enzyme.jl's `docs/src/dev_docs.md`.
 
 ## Compiler source compatibility
 
-This candidate pins an Enzyme-JAX main-based source without the optional Z3
-integration. Reactant upstream's Z3 WORKSPACE load belongs to a separate
-Enzyme-JAX branch and is omitted here to match the selected compiler source.
-No Z3-backed functionality is included in this candidate. Restore that load
-only with a compiler pin that provides its Bazel package and validate the
-combined library again.
+This candidate pins an Enzyme-JAX main-based source that provides the Z3
+Bazel package. Reactant's `deps/ReactantExtra/WORKSPACE` loads that package,
+and the combined library build validates the pin. Keep the compiler pin and Z3
+load together in subsequent refreshes.

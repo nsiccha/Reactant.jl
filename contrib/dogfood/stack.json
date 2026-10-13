@@ -105,18 +105,19 @@
     },
     "Enzyme.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.jl.git",
-      "upstream_main": "f3e0384f13d43a743aaa28a4db9409f275a6f164",
+      "upstream_main": "6932801964f3140e53ca0e88d2fe867b9d47ace6",
       "fork_url": "https://github.com/nsiccha/Enzyme.jl.git",
       "inputs": [
         {
-          "branch": "dogfood (local Enzyme.jl line, owner Enzyme)",
-          "commit": "81b292363ed4b2d113177b0b405b231e028b75fa",
-          "source": "Enzyme's local dogfood tip, the pre-#3824 line: upstream main through f3e0384 (0.13.215 without the Enzyme_jll 0.0.303 bump, Enzyme_jll 0.0.302) plus every dogfood repair, including the tuple-field repair of draft EnzymeAD/Enzyme.jl#3717, set_atomic_add and EnzymeCore 0.8.24. Taken per user decision Enzyme/decisions/2026-10-13T10-48-59-026-0meei64; it does not carry #3774/#3810."
+          "branch": "dogfood (retained published Enzyme.jl line, owner Enzyme)",
+          "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+          "source": "Retained the previously accepted opt-in line for RK consumer workloads. It pins Enzyme_jll 0.0.298, which RK permits. The newer 81b292363ed4b2d113177b0b405b231e028b75fa line requires Enzyme_jll 0.0.302, deliberately excluded by RK after a Julia 1.10 native reverse-gradient crash; 0.0.303 has a separate Julia 1.12 segfault (#3824). The newer Enzyme.jl line is not part of this publication."
         }
       ],
-      "commit": "81b292363ed4b2d113177b0b405b231e028b75fa",
-      "tree": "671e23e1a07534adc11c391408e60d365d6252b6",
-      "native_artifact": "Enzyme_jll 0.0.302+0; separate from libReactantExtra"
+      "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+      "tree": "400df7b1b92de3a45a9a37161adaa1dff466e28e",
+      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra",
+      "selection_note": "Held at the existing public dogfood tip because RK excludes Enzyme_jll 0.0.302; the refreshed compiler and Reactant frontend remain opt-in."
     }
   },
   "excluded": [
