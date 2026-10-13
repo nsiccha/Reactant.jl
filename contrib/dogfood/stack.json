@@ -4,20 +4,21 @@
   "repositories": {
     "Enzyme": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
-      "upstream_main": "d342169d9d82ccccd27a13d6cde16e95ea341cde",
+      "upstream_main": "2c8fd12d5ccc2f4f26a171f6a79ac170bc986ce4",
       "fork_url": "https://github.com/nsiccha/Enzyme.git",
       "inputs": [
         {
           "branch": "pr/custom-rules",
-          "commit": "e7ea87baeb949077ace561234538bfa08e9ee975"
+          "commit": "e7ea87baeb949077ace561234538bfa08e9ee975",
+          "source": "Head of draft EnzymeAD/Enzyme#3324. The 2026-10-13 refresh ports it to the strict property assembly of EnzymeAD/Enzyme#3411 in dogfood commit 1a0c4579e00c06dde828781e4f2c4de729303b6c; the PR branch itself is unchanged."
         }
       ],
-      "commit": "1c9c1022b81e54d7960e0dfa5bd2f059113d5385",
-      "tree": "42735212137b6be71c6819dec4269bec67c0d55e"
+      "commit": "1a0c4579e00c06dde828781e4f2c4de729303b6c",
+      "tree": "9f03490193202b8548b1751087717f8d108b027c"
     },
     "Enzyme-JAX": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme-JAX.git",
-      "upstream_main": "9e5fb194b5ffcc94eb7c480a671f3a43cafa6ba7",
+      "upstream_main": "b6e9369f2f5d8361499dd77a80e869b28a58b16f",
       "fork_url": "https://github.com/nsiccha/Enzyme-JAX.git",
       "inputs": [
         {
@@ -25,18 +26,9 @@
           "commit": "6759ed4ca4606b96be71a976f10d3e0a139c4779"
         },
         {
-          "branch": "complex-zero-constant-folds",
-          "commit": "104e8868c83b9c3636385b568b057bdffc1f0f3e"
-        },
-        {
           "branch": "convert-convert-float-exact",
           "commit": "a921925c47e247295b3937f6b6b45b678cd18dac",
           "source": "Local topic, not published; fix compiled in build dogfood-c94e74b6-r1, convertconvert.mlir expectations corrected afterwards"
-        },
-        {
-          "branch": "reshape-slice-rewrite-termination",
-          "commit": "b7942574784e2eb7490e925d9c8856fd36a46ce1",
-          "source": "Local topic, not published; compiled and runtime-accepted in build dogfood-c94e74b6-r1; superseded by upstream df92766a, intake resolves to the current upstream implementation"
         },
         {
           "branch": "complex-abs-derivatives",
@@ -54,22 +46,39 @@
           "source": "Published nsiccha/Enzyme-JAX topic; runtime-accepted in build dogfood-b40b1c08-r2"
         },
         {
-          "branch": "gesdd-complex-rwork",
-          "commit": "af6c697092be0602ef8f4946fd62c447d34f2a09",
-          "source": "Published nsiccha/Enzyme-JAX topic, draft EnzymeAD/Enzyme-JAX#3301; contains 56d19abb7d902c732ad3061e2961617b1b578a38, runtime-accepted in build dogfood-b40b1c08-r2; the complex WORK allocation was compiled and runtime-checked in build svd-099f61ea-r1"
-        },
-        {
           "branch": "fix/reduce-pad-multiplicity",
           "commit": "f21a998c26dfb31ab6fb4901504540e6a0810e3b",
           "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. Current frontend pins are metadata-only relative to the accepted build; artifact SHA256 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba."
         }
       ],
-      "commit": "73ebe252cb0ebdaa2f2d91487b09c72e0684ea5b",
-      "tree": "124253ce24d03b211ea38230a5a649d0b92b6a3e"
+      "commit": "2d4305721aec42e00804a8990e485396ba51fc93",
+      "tree": "361a89745bd8e4be655db5444150ffd339a83e21",
+      "superseded_by_upstream": [
+        {
+          "branch": "complex-zero-constant-folds",
+          "commit": "104e8868c83b9c3636385b568b057bdffc1f0f3e",
+          "superseded_by": "EnzymeAD/Enzyme-JAX#3507 (bc839345), identical code change",
+          "dropped_in": "2026-10-13 refresh"
+        },
+        {
+          "branch": "reshape-slice-rewrite-termination",
+          "commit": "b7942574784e2eb7490e925d9c8856fd36a46ce1",
+          "source": "Local topic, not published; compiled and runtime-accepted in build dogfood-c94e74b6-r1; superseded by upstream df92766a, intake resolves to the current upstream implementation",
+          "superseded_by": "EnzymeAD/Enzyme-JAX#3295 (115eb71e), upstream form of the same fix plus a backtracking-index correction",
+          "dropped_in": "2026-10-13 refresh"
+        },
+        {
+          "branch": "gesdd-complex-rwork",
+          "commit": "af6c697092be0602ef8f4946fd62c447d34f2a09",
+          "source": "Published nsiccha/Enzyme-JAX topic, draft EnzymeAD/Enzyme-JAX#3301; contains 56d19abb7d902c732ad3061e2961617b1b578a38, runtime-accepted in build dogfood-b40b1c08-r2; the complex WORK allocation was compiled and runtime-checked in build svd-099f61ea-r1",
+          "superseded_by": "EnzymeAD/Enzyme-JAX#3446 (39e53ef7): complex gesdd rwork placement, LAPACK 3.7 rwork bound and complex WORK sizing; supersedes draft EnzymeAD/Enzyme-JAX#3301",
+          "dropped_in": "2026-10-13 refresh"
+        }
+      ]
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "19bf4a5be57bc6c55e3b877dfade4c38947e516e",
+      "upstream_main": "bcd1a1c0256d99606e624b9e109d004abd1d620a",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
@@ -89,7 +98,8 @@
       "integration_notes": [
         "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default.",
         "Adjoint gather intake includes upstream main collect(SubArray) and BUILD header cleanup. WORKSPACE conflict retains accepted dogfood Enzyme-JAX73ebe pin. Existing4a65 library is used for frontend acceptance; native BUILD changes await the next separately scoped combined build.",
-        "Retained provisional41919/a264 history and initial setup failure;77f005 corrects frontier findings. Retained4a65 compiled library with exact current Julia-source runtime checks; no native rebuild under this hunt."
+        "Retained provisional41919/a264 history and initial setup failure;77f005 corrects frontier findings. Retained4a65 compiled library with exact current Julia-source runtime checks; no native rebuild under this hunt.",
+        "2026-10-13 refresh (decision 1v379lx): merged upstream main bcd1a1c0 (0.2.292, Reactant_jll 0.0.418); only the WORKSPACE Enzyme-JAX pin conflicted."
       ]
     },
     "Enzyme.jl": {
@@ -105,7 +115,8 @@
       ],
       "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
       "tree": "400df7b1b92de3a45a9a37161adaa1dff466e28e",
-      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra"
+      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra",
+      "refresh_note": "2026-10-13 refresh: not yet refreshed. Intake of Enzyme's synced local dogfood line (upstream main 6932801 or later) follows its own landing; until then this entry stays at the accepted e02eb374."
     }
   },
   "excluded": [
@@ -121,5 +132,9 @@
       "change": "RK14/RK17/RK18 experiments",
       "reason": "Not part of the selected reviewed stack; RK17 is optional and RK18 was rejected."
     }
-  ]
+  ],
+  "refreshed": {
+    "date": "2026-10-13",
+    "decision": "ReactiveKernels:review:enzymemlir-rules/decisions/2026-10-13T08-08-19-168-1v379lx"
+  }
 }
