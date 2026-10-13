@@ -51,8 +51,8 @@
           "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. Current frontend pins are metadata-only relative to the accepted build; artifact SHA256 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba."
         }
       ],
-      "commit": "2d4305721aec42e00804a8990e485396ba51fc93",
-      "tree": "361a89745bd8e4be655db5444150ffd339a83e21",
+      "commit": "2efdc89353dfd14e238659c7113a00e8c849d6c2",
+      "tree": "4d42bc2c040326ba8c67bcdbf6e2903827e9a5c9",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
