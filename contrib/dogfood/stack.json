@@ -4,17 +4,18 @@
   "repositories": {
     "Enzyme": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
-      "upstream_main": "2c8fd12d5ccc2f4f26a171f6a79ac170bc986ce4",
+      "upstream_main": "6fbd5c11e308abe9ff5e1dea45b91a388ccf0288",
       "fork_url": "https://github.com/nsiccha/Enzyme.git",
       "inputs": [
         {
           "branch": "pr/custom-rules",
           "commit": "e7ea87baeb949077ace561234538bfa08e9ee975",
-          "source": "Head of draft EnzymeAD/Enzyme#3324. The 2026-10-13 refresh ports it to the strict property assembly of EnzymeAD/Enzyme#3411 in dogfood commit 1a0c4579e00c06dde828781e4f2c4de729303b6c; the PR branch itself is unchanged."
+          "source": "Head of draft EnzymeAD/Enzyme#3324. The 2026-10-13 refresh ports it to the strict property assembly of EnzymeAD/Enzyme#3411 in dogfood commit 97121ac5edc086a090bdefd104b79f66b805197a; the PR branch itself is unchanged."
         }
       ],
-      "commit": "1a0c4579e00c06dde828781e4f2c4de729303b6c",
-      "tree": "9f03490193202b8548b1751087717f8d108b027c"
+      "commit": "97121ac5edc086a090bdefd104b79f66b805197a",
+      "tree": "a90b74107af5c4b710ffe6386dbf78fff7bdfffc",
+      "upstream_note": "Upstream main through 6fbd5c11. Upstream main tip 2c8fd12d (EnzymeAD/Enzyme#3482, LLVM 24 LICM accessors) is left out: the LLVM 24 snapshot pinned by Enzyme-JAX and Reactant.jl main lacks getLicmMssaOptCap, so libReactantExtra failed to compile with it (job gordito-befb8a7d-r1). Enzyme-JAX main itself pins Enzyme 25d27195, before #3482."
     },
     "Enzyme-JAX": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme-JAX.git",
@@ -51,8 +52,8 @@
           "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. Current frontend pins are metadata-only relative to the accepted build; artifact SHA256 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba."
         }
       ],
-      "commit": "2efdc89353dfd14e238659c7113a00e8c849d6c2",
-      "tree": "4d42bc2c040326ba8c67bcdbf6e2903827e9a5c9",
+      "commit": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
+      "tree": "4d802ac6052543955ddf6680e6bba852bd5db156",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
