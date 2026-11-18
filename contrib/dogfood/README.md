@@ -1,9 +1,9 @@
 # Opt-in integration branch
 
-`nsiccha/Reactant.jl:dogfood` combines selected proposed changes with upstream
+`nsiccha/Reactant.jl:dogfood` integrates fork fixes with upstream
 `main` for RK development and representative CPU workloads. Normal consumers
-continue using upstream releases. The source set is recorded in `stack.json`;
-the compiler dependency pins in `deps/ReactantExtra/WORKSPACE` and the companion
+continue using upstream releases. The source set is recorded in `stack.json`.
+The compiler dependency pins in `deps/ReactantExtra/WORKSPACE` and the companion
 Enzyme-JAX fork identify the matching Enzyme-JAX and Enzyme sources.
 
 ## Use a tested revision
@@ -11,7 +11,7 @@ Enzyme-JAX fork identify the matching Enzyme-JAX and Enzyme sources.
 Use an isolated Julia project and pin an exact Reactant commit. This branch does
 not change the registered Reactant_jll artifact: installing the Julia source
 alone does not load the proposed compiler changes. Build or obtain the matching
-`libReactantExtra.so`, record its SHA256 with the four source commits, and set
+`libReactantExtra.so`, record its SHA256 with the source commits from the manifest, and set
 `[Reactant_jll] libReactantExtra_path` in that project's `LocalPreferences.toml`.
 Reactant_jll must be a direct dependency of that project for the preference to
 apply. Follow the repository's `docs/src/tutorials/local-build.md` for a local
@@ -35,33 +35,27 @@ RK's separate released-toolchain gates for enabling product defaults.
    frontend and independent gradient checks, plus representative linear-algebra,
    GP and PK/PD workloads. Record failures and timings as well as successes.
 4. Promote only a passing candidate with ordinary fast-forward pushes, in
-   dependency order. Record the exact four commits and library SHA256 in the
+   dependency order. Record the source commits and library SHA256 in the
    acceptance receipt. Preserve the previous passing receipt and artifacts.
    A moving branch name is not a reproducible dependency pin.
 
-Refreshes are currently explicit maintenance runs. No unattended merge, build,
-publish schedule or standing approval is installed. New source revisions need
-new validation before promotion. The original proposal branches stay separate
-so upstream PRs remain independently reviewable.
+The weekly refresh checks upstream and fork topics, updates the problem index
+and requests a publication decision for validated changes. Original proposal
+branches remain available for upstream review.
 
 ## Native Enzyme.jl
 
-The opt-in project pins Enzyme.jl and its bundled EnzymeCore to the exact
-Enzyme.jl source commit in `stack.json`. This refresh retains the previously
-published Enzyme.jl tip. Its tuple-field repair, draft EnzymeAD/Enzyme.jl#3717,
-includes the revision that computes dominance with LLVM's dominator tree.
-ReactiveKernels excludes Enzyme_jll 0.0.302 after a Julia 1.10 native reverse
-crash, and the newer Enzyme.jl dogfood tip requires that binary. Revisit the
-Enzyme.jl line after a compatible native binary and Julia 1.10/1.12 tests are
-available.
+The RK test project pins Enzyme.jl and its bundled EnzymeCore to the source
+commit in `stack.json`, with Enzyme_jll 0.0.298+0. Its Julia reverse-mode
+checks load the plugin matching Julia's LLVM version. Record
+`Enzyme_jll.libEnzyme_path`, the library hash, Julia version and LLVM version
+with those results.
 
-Enzyme.jl uses the native library from Enzyme_jll; it does not use Reactant's
-`libReactantExtra.so`. Start with the repair's tested Enzyme_jll 0.0.298+0 and
-record `Enzyme_jll.libEnzyme_path`, the library hash, Julia version and LLVM
-version separately. The shared source repository named Enzyme contains both
-native and MLIR code, but a Reactant MLIR build is not a native Julia LLVM
-plugin. Any later native-library override must be built against Julia's LLVM
-and verified independently, following Enzyme.jl's `docs/src/dev_docs.md`.
+Enzyme's `dogfood` source includes both the MLIR rules used by Reactant and
+the native fixes used by Julia. Enzyme.jl's own dogfood branch selects its
+published native build by the exact commit in `deps/dogfood_libenzyme.toml`.
+The static matrix exponential regressions also use the StaticArrays revision
+in `stack.json`.
 
 ## Compiler source compatibility
 
