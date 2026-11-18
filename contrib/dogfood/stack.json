@@ -4,7 +4,7 @@
   "repositories": {
     "Enzyme": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
-      "upstream_main": "0231d1a774492d524955c6b952f5a92edeced679",
+      "upstream_main": "0fa6f8401af6b8211a783213643692be20508842",
       "fork_url": "https://github.com/nsiccha/Enzyme.git",
       "inputs": [
         {
@@ -19,12 +19,12 @@
         },
         {
           "branch": "dogfood-jll",
-          "commit": "15345e27c376aec9b3791ad8511e06d5a5e116b3",
+          "commit": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51",
           "source": "Native library fixes integrated into dogfood. Enzyme.jl selects its published binary independently."
         }
       ],
-      "commit": "0eb02b67a608a788886dd1adbbc5cb900e2818e7",
-      "tree": "093632ffd132a6ea11e27bb60c8087aca3131e32",
+      "commit": "07d3309bf1964b1cb01ea1d34a3db061dc780217",
+      "tree": "1e6f59082cb35a67142497aedb786013756779e7",
       "upstream_note": "The unified source contains upstream main, the MLIR custom rules, the native Julia fixes and the recursive subcall tape changes."
     },
     "Enzyme-JAX": {
@@ -102,8 +102,8 @@
           "source": "StableHLO if/case reverse: keep adjoints of branch values in the branch"
         }
       ],
-      "commit": "d87e55a4f9aaa7c8eb2aff74dd305fa391ddf49d",
-      "tree": "d223d418f475f89a188122f73fd25b9ee1f1cf01",
+      "commit": "33ee23e9a3543dae00b53cce9381a66f96241a56",
+      "tree": "3de022adffaa200e0865cd491e5b75c56c0a8c95",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
@@ -129,7 +129,7 @@
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+      "upstream_main": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
@@ -198,15 +198,15 @@
       "inputs": [
         {
           "branch": "dogfood",
-          "commit": "701f2a807169d8f4e0dd0330e09bc015e4011a62",
+          "commit": "01d65bc18c4053a630969fe03a55e85221263063",
           "source": "Enzyme.jl 0.13.221 and EnzymeCore 0.8.28 with LLVM.jl 10 support."
         }
       ],
-      "commit": "701f2a807169d8f4e0dd0330e09bc015e4011a62",
-      "tree": "2a08b0ce3cdc544e9df54dffd4c0b760a0497c77",
+      "commit": "01d65bc18c4053a630969fe03a55e85221263063",
+      "tree": "18b4ca12e7752d66ec0ded9b6708c62db877c2b8",
       "native_artifact": "Enzyme_jll 0.0.301+0 with the native build selected by deps/dogfood_libenzyme.toml at this Enzyme.jl commit.",
       "selection_note": "Reactant and Enzyme.jl share LLVM.jl 10.4.3 and GPUCompiler 2.23.3 in the Julia 1.10.12 and 1.12.7 CPU test environments.",
-      "native_source": "15345e27c376aec9b3791ad8511e06d5a5e116b3"
+      "native_source": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51"
     },
     "StaticArrays.jl": {
       "fork_url": "https://github.com/nsiccha/StaticArrays.jl.git",
