@@ -198,12 +198,12 @@
       "inputs": [
         {
           "branch": "dogfood",
-          "commit": "34197d4c0f8b7a1929d1586de8d40c2d983e2b8e",
+          "commit": "701f2a807169d8f4e0dd0330e09bc015e4011a62",
           "source": "Enzyme.jl 0.13.221 and EnzymeCore 0.8.28 with LLVM.jl 10 support."
         }
       ],
-      "commit": "34197d4c0f8b7a1929d1586de8d40c2d983e2b8e",
-      "tree": "59d2eaa3f681774429f794c2c8285cea8f8b3b61",
+      "commit": "701f2a807169d8f4e0dd0330e09bc015e4011a62",
+      "tree": "2a08b0ce3cdc544e9df54dffd4c0b760a0497c77",
       "native_artifact": "Enzyme_jll 0.0.301+0 with the native build selected by deps/dogfood_libenzyme.toml at this Enzyme.jl commit.",
       "selection_note": "Reactant and Enzyme.jl share LLVM.jl 10.4.3 and GPUCompiler 2.23.3 in the Julia 1.10.12 and 1.12.7 CPU test environments.",
       "native_source": "15345e27c376aec9b3791ad8511e06d5a5e116b3"
