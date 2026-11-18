@@ -19,12 +19,12 @@
         },
         {
           "branch": "dogfood-jll",
-          "commit": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51",
+          "commit": "c423e860eed0bc541955463fc6ded3b81cd82660",
           "source": "Native library fixes integrated into dogfood. Enzyme.jl selects its published binary independently."
         }
       ],
-      "commit": "07d3309bf1964b1cb01ea1d34a3db061dc780217",
-      "tree": "1e6f59082cb35a67142497aedb786013756779e7",
+      "commit": "a3ca1cfa3c02c42fcf46df7a37c8a99afbb91388",
+      "tree": "8d1a9a072f3f7fc2e9105bd42f621cf023b5e4d1",
       "upstream_note": "The unified source contains upstream main, the MLIR custom rules, the native Julia fixes and the recursive subcall tape changes."
     },
     "Enzyme-JAX": {
@@ -102,8 +102,8 @@
           "source": "StableHLO if/case reverse: keep adjoints of branch values in the branch"
         }
       ],
-      "commit": "33ee23e9a3543dae00b53cce9381a66f96241a56",
-      "tree": "3de022adffaa200e0865cd491e5b75c56c0a8c95",
+      "commit": "63bb69f3890b4b023d44d392f46b3de4dc3ce642",
+      "tree": "3adc1bcb466c6b117f56c78899cc8d346e89d590",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
@@ -198,15 +198,15 @@
       "inputs": [
         {
           "branch": "dogfood",
-          "commit": "01d65bc18c4053a630969fe03a55e85221263063",
+          "commit": "962fc64cd49008a6665ee95204395d41f63ef3dc",
           "source": "Enzyme.jl 0.13.221 and EnzymeCore 0.8.28 with LLVM.jl 10 support."
         }
       ],
-      "commit": "01d65bc18c4053a630969fe03a55e85221263063",
-      "tree": "18b4ca12e7752d66ec0ded9b6708c62db877c2b8",
+      "commit": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+      "tree": "f4f1de643c4071b7b74578547c7d27f5d7874e11",
       "native_artifact": "Enzyme_jll 0.0.301+0 with the native build selected by deps/dogfood_libenzyme.toml at this Enzyme.jl commit.",
       "selection_note": "Reactant and Enzyme.jl share LLVM.jl 10.4.3 and GPUCompiler 2.23.3 in the Julia 1.10.12 and 1.12.7 CPU test environments.",
-      "native_source": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51"
+      "native_source": "c423e860eed0bc541955463fc6ded3b81cd82660"
     },
     "StaticArrays.jl": {
       "fork_url": "https://github.com/nsiccha/StaticArrays.jl.git",
