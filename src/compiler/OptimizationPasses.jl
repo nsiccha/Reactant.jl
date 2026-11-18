@@ -685,6 +685,9 @@ function expose_loop_limits_for_ad!(op; preserve_singletons=false)
 end
 
 function run_pass_pipeline!(mod, pass_pipeline, key=""; enable_verifier=true)
+    if occursin("enzyme{", pass_pipeline)
+        normalize_condition_loops!(mod)
+    end
     pm = MLIR.IR.PassManager()
     id = nothing
     try

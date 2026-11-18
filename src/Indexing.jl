@@ -12,6 +12,10 @@ using StructUtils: Selectors
 using Base: TwicePrecision
 using LinearAlgebra: Adjoint, Transpose
 
+const ScalarIntegerIndex = Union{
+    Signed,Unsigned,TracedRNumber{<:Union{Signed,Unsigned}}
+}
+
 function overloaded_unsafe_getindex end
 
 ## Number Indexing
@@ -24,7 +28,7 @@ end
 ## Array Indexing
 ### Scalar Indexing
 function Base.getindex(
-    a::TracedRArray{T,N}, index::Vararg{Union{Int,TracedRNumber{Int}},N}
+    a::TracedRArray{T,N}, index::Vararg{ScalarIntegerIndex,N}
 ) where {T,N}
     assertscalar("getindex(::TracedRArray, ::Vararg{Int, N})")
     res = @opcall(reshape(@opcall(dynamic_slice(a, [index...], ones(Int32, N))), Int[]))
@@ -32,7 +36,7 @@ function Base.getindex(
 end
 
 function Base.getindex(
-    a::TracedRArray{T,N}, index::Union{Int,TracedRNumber{Int}}
+    a::TracedRArray{T,N}, index::ScalarIntegerIndex
 ) where {T,N}
     return getindex(a, scalar_index_to_cartesian(index, size(a))...)
 end
@@ -79,7 +83,7 @@ end
 _getindex_ancestor(ancestor, idxs...) = getindex(ancestor, idxs...)
 
 function Base.getindex(
-    a::AnyTracedRArray{T,N}, index::Vararg{Union{Int,TracedRNumber{Int}},N}
+    a::AnyTracedRArray{T,N}, index::Vararg{ScalarIntegerIndex,N}
 ) where {T,N}
     ancestor, idxs = TracedUtils.get_ancestor_and_indices(a, index...)
     return _getindex_ancestor(ancestor, idxs...)
@@ -642,7 +646,7 @@ function getindex_general(a::TracedRArray{T,N}, indices::Vararg{Any,N}) where {T
     end
 
     ddims = findall(indices) do idx
-        return idx isa Integer || idx isa TracedRNumber{Int}
+        return idx isa Integer || idx isa TracedRNumber{<:Integer}
     end
     isempty(ddims) || return materialize_traced_array(dropdims(x; dims=Tuple(ddims)))
     return x
