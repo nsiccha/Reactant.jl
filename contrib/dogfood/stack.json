@@ -4,22 +4,32 @@
   "repositories": {
     "Enzyme": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
-      "upstream_main": "6fbd5c11e308abe9ff5e1dea45b91a388ccf0288",
+      "upstream_main": "0231d1a774492d524955c6b952f5a92edeced679",
       "fork_url": "https://github.com/nsiccha/Enzyme.git",
       "inputs": [
         {
           "branch": "pr/custom-rules",
           "commit": "e7ea87baeb949077ace561234538bfa08e9ee975",
           "source": "Head of draft EnzymeAD/Enzyme#3324. The 2026-10-13 refresh ports it to the strict property assembly of EnzymeAD/Enzyme#3411 in dogfood commit 97121ac5edc086a090bdefd104b79f66b805197a; the PR branch itself is unchanged."
+        },
+        {
+          "branch": "claude/project-thread-esj7j3",
+          "commit": "aff960856a7ee94c45597ae1a12dc59ac109d67b",
+          "source": "Run tapebyref.ll with opaque pointers on LLVM 16"
+        },
+        {
+          "branch": "dogfood-jll",
+          "commit": "15345e27c376aec9b3791ad8511e06d5a5e116b3",
+          "source": "Native library fixes integrated into dogfood. Enzyme.jl selects its published binary independently."
         }
       ],
-      "commit": "97121ac5edc086a090bdefd104b79f66b805197a",
-      "tree": "a90b74107af5c4b710ffe6386dbf78fff7bdfffc",
-      "upstream_note": "Upstream main through 6fbd5c11. Upstream main tip 2c8fd12d (EnzymeAD/Enzyme#3482, LLVM 24 LICM accessors) is left out: the LLVM 24 snapshot pinned by Enzyme-JAX and Reactant.jl main lacks getLicmMssaOptCap, so libReactantExtra failed to compile with it (job gordito-befb8a7d-r1). Enzyme-JAX main itself pins Enzyme 25d27195, before #3482."
+      "commit": "9dcf2f01d6a0827ada883f449192b115cc9ae2f4",
+      "tree": "4ab6ee28bcf631b6c5360ec596139aa6c721942b",
+      "upstream_note": "The unified source contains upstream main, the MLIR custom rules, the native Julia fixes and the recursive subcall tape changes."
     },
     "Enzyme-JAX": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme-JAX.git",
-      "upstream_main": "b6e9369f2f5d8361499dd77a80e869b28a58b16f",
+      "upstream_main": "7598c00c85e011ceae9f19b695ada92322870cca",
       "fork_url": "https://github.com/nsiccha/Enzyme-JAX.git",
       "inputs": [
         {
@@ -50,10 +60,50 @@
           "branch": "fix/reduce-pad-multiplicity",
           "commit": "f21a998c26dfb31ab6fb4901504540e6a0810e3b",
           "source": "Local upstream-main topic, unpublished; independently Astra reviewed. C++ and all MLIR inputs match compiled 1817/e72; final delta is one FileCheck comment. Corrected 1417/1417 lit, both focused RUN lines, 148 directive and 193 numeric mutations pass. Combined gordito library and default per-lane/Gaussian 60/60 plus exact original reproducer pass. The 2026-10-02 accepted artifact SHA256 was 4a65db9203a7a59f8204a9424aa73f326ee944cff4b400fab25d508fc5db6fba; the refreshed compiler sources require their own build and acceptance receipt."
+        },
+        {
+          "branch": "fix-float-convertconvert-20261003",
+          "commit": "c3debdaa70580ea753b3fb3b2b564dac4176e86b",
+          "source": "ConvertConvertFloat: drop the intermediate conversion only when it is exact"
+        },
+        {
+          "branch": "fix/strided-dot-result-extents",
+          "commit": "501c98ab23d8af19909e2f4168ea553870329d7b",
+          "source": "Round strided dot slice extents up in the shared helper"
+        },
+        {
+          "branch": "kb/checkpoint-replay-dominance-20261011",
+          "commit": "1eed80b044eca7c06f352d629f14637c988307a3",
+          "source": "Preserve checkpoint replay and conditional slicing in reverse"
+        },
+        {
+          "branch": "kb/shared-lkj-retained-loops-c0cd9915",
+          "commit": "c0cd99155766ce80acd8e35fbefb0579668d077e",
+          "source": "Enable LICM for its optimizer positive control"
+        },
+        {
+          "branch": "kb/shared-lkj-structure-dd540f8d",
+          "commit": "dd540f8d7424d60a71294ced439f73608d4409c2",
+          "source": "Trim gather retention fixture trailing blank line"
+        },
+        {
+          "branch": "rk13/while-if-enzyme-cleanup",
+          "commit": "ddf107d681e9b118ddc3996e61ca804d35e679da",
+          "source": "lit: the min-cut variant keeps only the reverse loop"
+        },
+        {
+          "branch": "rk14/while-early-exit-caches",
+          "commit": "059ebad69fff5dabc067c23743ab52edd6297ef4",
+          "source": "StableHLO while remover: tape early-exit loops by their iteration counter"
+        },
+        {
+          "branch": "rk17/localize-branch-adjoints",
+          "commit": "422b5b75b523bbc27819ddf6d3953bdd2226bb17",
+          "source": "StableHLO if/case reverse: keep adjoints of branch values in the branch"
         }
       ],
-      "commit": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
-      "tree": "4d802ac6052543955ddf6680e6bba852bd5db156",
+      "commit": "f7609eb50182485c8d6e485a42a6d013a43cb604",
+      "tree": "c00e10824b2310802b2f89ec001a5dab15981070",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
@@ -79,7 +129,7 @@
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+      "upstream_main": "b9e50ef722a362211ef13d4b0166427fde7c434c",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
@@ -94,13 +144,46 @@
           "branch": "fix/adjoint-linear-gather",
           "commit": "77f00510315c65447ebcd8494c61b3bae98b7227",
           "source": "Corrected clean-main producer; descendant of41919 validates static masks, index types/bounds and Cartesian shapes before materialization. Standalone574/574 and renewed producer acceptance verified. Local --no-ff intake authorized by hunt0lx2ea3; integrated library/runtime acceptance is recorded separately in1duca0d. No native rebuild/publication implied."
+        },
+        {
+          "branch": "compiler/preserve-lazy-control-flow",
+          "commit": "8d1a509434e20e9655547d030423d2f489f65b32",
+          "source": "Preserve custom pass pipelines and memoize constant loop bounds"
+        },
+        {
+          "branch": "compiler/preserve-lazy-control-flow-singletons",
+          "commit": "30c9347d22605be59830b43135a6dc9aa73c9fb4",
+          "source": "Keep singleton body identities within dominated regions"
+        },
+        {
+          "branch": "kb/all-real-static-exp-reverse-20261011",
+          "commit": "1443ba7f624961c44ab6e501dc0836cbc4301b3d",
+          "source": "Trace real static matrix exponentials and retained reverse loops"
+        },
+        {
+          "branch": "kb/shared-lkj-gather-order-c60176ec",
+          "commit": "c60176ec6ce561d0f0bfef20392fa77889d60acf",
+          "source": "Retain gather ordering across shape specialization and reverse AD"
+        },
+        {
+          "branch": "kb/shared-lkj-retained-loops-da821a7e",
+          "commit": "da821a7e63fd095d194b16a38444be29df944620",
+          "source": "Test invariant work stays lazy inside retained loops"
+        },
+        {
+          "branch": "ns/besselix-integer-runtime",
+          "commit": "bb47a6b02207ba756c13c439ceb7d5b01001e3fb",
+          "source": "Implement traced integer-order scaled modified Bessel I"
+        },
+        {
+          "branch": "pkpd-rank-zero-sum-20260929",
+          "commit": "5d29a9355f628d04bc3f49adb62a6e43c1d5229c",
+          "source": "Fix rank-zero mapped reductions with inferred result types"
         }
       ],
       "integration_notes": [
-        "Register Z3 from selected Enzyme-JAX main, which now provides third_party/z3 and enables its dependency by default.",
-        "The adjoint-gather topic is retained. The 2026-10-13 refresh pins Enzyme-JAX 6143e730 and carries upstream Reactant.jl main through d2285670.",
-        "The 4a65db92 library and its source-only frontend acceptance are historical 2026-10-02 evidence; the refreshed stack is checked by a new gordito build and acceptance job.",
-        "The 2026-10-13 refresh merged upstream bcd1a1c0 (0.2.292, Reactant_jll 0.0.418), then d2285670 (#3430 norm fixes and #3431 VectorInterface strong-zero fix). The latter two commits touch Julia source and tests only; native build inputs are unchanged."
+        "Build libReactantExtra using the Enzyme-JAX and Enzyme revisions in this manifest.",
+        "The static-matrix exponential tests use the StaticArrays.jl input below."
       ]
     },
     "Enzyme.jl": {
@@ -117,25 +200,36 @@
       "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
       "tree": "400df7b1b92de3a45a9a37161adaa1dff466e28e",
       "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra",
-      "selection_note": "Held at the existing public dogfood tip because RK excludes Enzyme_jll 0.0.302; the refreshed compiler and Reactant frontend remain opt-in."
+      "selection_note": "The opt-in RK project retains its exact Enzyme.jl source and matching Enzyme_jll version. The current Enzyme.jl dogfood branch manages its newer native binaries separately."
+    },
+    "StaticArrays.jl": {
+      "fork_url": "https://github.com/nsiccha/StaticArrays.jl.git",
+      "commit": "03fd23a659ad3597c146b650da53a3751878ec8f",
+      "inputs": [
+        {
+          "branch": "kb/all-real-static-exp-20261011",
+          "commit": "03fd23a659ad3597c146b650da53a3751878ec8f",
+          "source": "Companion static matrix exponential implementation and tests."
+        }
+      ]
     }
   },
   "excluded": [
     {
-      "change": "Table-based Cholesky/solve alternative",
-      "reason": "Mutually exclusive with the selected C++ implementations; compare in a separate candidate."
+      "change": "Alternate TableGen rules (#3278)",
+      "reason": "An operation can register one differentiation interface. The selected sources contain the C++ Cholesky rules and upstream TableGen triangular-solve rules, including the complex adjoint fix."
     },
     {
-      "change": "Old RK13/RK16 correctness branches",
-      "reason": "Superseded by upstream Enzyme-JAX PRs #3242 and #3241, included through main."
+      "change": "Historical RK13 Reactant compiler pin",
+      "reason": "The current compiler includes the upstream RK13 changes."
     },
     {
-      "change": "RK14/RK17/RK18 experiments",
-      "reason": "Not part of the selected reviewed stack; RK17 is optional and RK18 was rejected."
+      "change": "Early RK18 experiment",
+      "reason": "Previously rejected and outside the 24 audited topic heads."
     }
   ],
   "refreshed": {
-    "date": "2026-10-13",
-    "decision": "ReactiveKernels:review:enzymemlir-rules/decisions/2026-10-13T08-08-19-168-1v379lx"
+    "date": "2026-11-18",
+    "source": "Upstream main and audited fork topics"
   }
 }
