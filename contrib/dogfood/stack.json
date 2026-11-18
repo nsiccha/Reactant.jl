@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "purpose": "Opt-in RK development and representative workloads; ordinary consumers remain on upstream releases.",
+  "purpose": "Opt-in Reactant compiler and Julia integration tests on representative CPU workloads.",
   "repositories": {
     "Enzyme": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.git",
@@ -179,6 +179,11 @@
           "branch": "pkpd-rank-zero-sum-20260929",
           "commit": "5d29a9355f628d04bc3f49adb62a6e43c1d5229c",
           "source": "Fix rank-zero mapped reductions with inferred result types"
+        },
+        {
+          "branch": "EnzymeAD/Reactant.jl#3384",
+          "commit": "031b875ed528e352a44a015d80952fbf4c0e9b77",
+          "source": "LLVM.jl 10 API migration and GPUCompiler 2.11 or later."
         }
       ],
       "integration_notes": [
@@ -188,19 +193,20 @@
     },
     "Enzyme.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Enzyme.jl.git",
-      "upstream_main": "6932801964f3140e53ca0e88d2fe867b9d47ace6",
+      "upstream_main": "1ee9a6f86e12601d4912fe45d73ec37ea745a880",
       "fork_url": "https://github.com/nsiccha/Enzyme.jl.git",
       "inputs": [
         {
-          "branch": "dogfood (retained published Enzyme.jl line, owner Enzyme)",
-          "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-          "source": "Retained the previously accepted opt-in line for RK consumer workloads. It pins Enzyme_jll 0.0.298, which RK permits. The newer 81b292363ed4b2d113177b0b405b231e028b75fa line requires Enzyme_jll 0.0.302, deliberately excluded by RK after a Julia 1.10 native reverse-gradient crash; 0.0.303 has a separate Julia 1.12 segfault (#3824). The newer Enzyme.jl line is not part of this publication."
+          "branch": "dogfood",
+          "commit": "34197d4c0f8b7a1929d1586de8d40c2d983e2b8e",
+          "source": "Enzyme.jl 0.13.221 and EnzymeCore 0.8.28 with LLVM.jl 10 support."
         }
       ],
-      "commit": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-      "tree": "400df7b1b92de3a45a9a37161adaa1dff466e28e",
-      "native_artifact": "Enzyme_jll 0.0.298+0; separate from libReactantExtra",
-      "selection_note": "The opt-in RK project retains its exact Enzyme.jl source and matching Enzyme_jll version. The current Enzyme.jl dogfood branch manages its newer native binaries separately."
+      "commit": "34197d4c0f8b7a1929d1586de8d40c2d983e2b8e",
+      "tree": "59d2eaa3f681774429f794c2c8285cea8f8b3b61",
+      "native_artifact": "Enzyme_jll 0.0.301+0 with the native build selected by deps/dogfood_libenzyme.toml at this Enzyme.jl commit.",
+      "selection_note": "Reactant and Enzyme.jl share LLVM.jl 10.4.3 and GPUCompiler 2.23.3 in the Julia 1.10.12 and 1.12.7 CPU test environments.",
+      "native_source": "15345e27c376aec9b3791ad8511e06d5a5e116b3"
     },
     "StaticArrays.jl": {
       "fork_url": "https://github.com/nsiccha/StaticArrays.jl.git",

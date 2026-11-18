@@ -1,7 +1,7 @@
 # Opt-in integration branch
 
 `nsiccha/Reactant.jl:dogfood` integrates fork fixes with upstream
-`main` for RK development and representative CPU workloads. Normal consumers
+`main` for compiler integration and representative CPU workloads. Normal consumers
 continue using upstream releases. The source set is recorded in `stack.json`.
 The compiler dependency pins in `deps/ReactantExtra/WORKSPACE` and the companion
 Enzyme-JAX fork identify the matching Enzyme-JAX and Enzyme sources.
@@ -19,8 +19,7 @@ build. Verify the actual loaded path with `Libdl.dllist()` before interpreting
 any results. Do not copy the preference into a global Julia environment.
 
 Keep the previous passing project, exact commit, library and receipt together.
-Rollback selects that project and library. These local builds do not satisfy
-RK's separate released-toolchain gates for enabling product defaults.
+Rollback selects that project and library. The branch is opt-in for projects that select this compiler.
 
 ## Refresh and promote
 
@@ -45,11 +44,12 @@ branches remain available for upstream review.
 
 ## Native Enzyme.jl
 
-The RK test project pins Enzyme.jl and its bundled EnzymeCore to the source
-commit in `stack.json`, with Enzyme_jll 0.0.298+0. Its Julia reverse-mode
-checks load the plugin matching Julia's LLVM version. Record
-`Enzyme_jll.libEnzyme_path`, the library hash, Julia version and LLVM version
-with those results.
+The opt-in test project pins Enzyme.jl 0.13.221 and its bundled EnzymeCore
+to the source in `stack.json`. The project resolves LLVM.jl 10.4.3,
+GPUCompiler 2.23.3 and Enzyme_jll 0.0.301+0. Set the Enzyme_jll
+preferences for both libEnzyme and libEnzymeBCLoad to the native build
+identified by that Enzyme.jl revision, selecting the LLVM major used by
+the running Julia. Record the loaded paths and hashes with the Julia version.
 
 Enzyme's `dogfood` source includes both the MLIR rules used by Reactant and
 the native fixes used by Julia. Enzyme.jl's own dogfood branch selects its
