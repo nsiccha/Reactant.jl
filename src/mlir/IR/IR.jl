@@ -54,6 +54,7 @@ include("Utils.jl")
 
 include("LogicalResult.jl")
 include("Context.jl")
+include("ThreadPool.jl")
 include("Dialect.jl")
 include("Location.jl")
 include("DiagnosticHandler.jl")
