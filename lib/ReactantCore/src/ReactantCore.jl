@@ -502,7 +502,7 @@ function trace_while(mod, expr; track_numbers, mincut, checkpointing, first_arg=
     Meta.isexpr(expr, :while, 2) || error("expected while expr")
     cond, body = expr.args
 
-    error_if_any_control_flow(body)
+    error_if_any_control_flow(mod, body)
 
     # Validate checkpointing usage - for raw while loops (not from trace_for),
     # Periodic(n) must be used since we can't compute default checkpoints
@@ -675,7 +675,7 @@ function trace_for(mod, expr; track_numbers, checkpointing, mincut)
     Meta.isexpr(expr, :for, 2) || error("expected for expr")
     assign, body = expr.args
 
-    error_if_any_control_flow(body)
+    error_if_any_control_flow(mod, body)
     if !Meta.isexpr(assign, :(=)) || !(assign.args[1] isa Symbol)
         error(
             "malformed for loop assignment, expected a single induction variable, got $assign",
@@ -808,7 +808,7 @@ end
 function trace_if(mod, expr; store_last_line=nothing, depth=0, track_numbers)
     discard_vars_from_expansion = []
     original_expr = expr
-    depth == 0 && error_if_any_control_flow(expr)
+    depth == 0 && error_if_any_control_flow(mod, expr)
 
     expand_nested =
         x -> begin
@@ -1083,7 +1083,7 @@ function cleanup_expr_to_avoid_boxing(expr, prepend::Symbol, all_vars)
     end
 end
 
-const CONTROL_FLOW_EXPRS = Symbol[:return, :break, :continue, :symbolicgoto, :macrocall]
+const CONTROL_FLOW_EXPRS = Symbol[:return, :break, :continue, :symbolicgoto]
 
 _trace_macro_name(x::Symbol) = x
 _trace_macro_name(x::GlobalRef) = x.name
@@ -1144,7 +1144,7 @@ function nested_trace_assignments(expr)
     return assigned
 end
 
-function error_if_any_control_flow(expr)
+function error_if_any_control_flow(mod, expr)
     expr isa Expr || return expr
     MacroTools.isdef(expr) && return expr
     # Returns in a nested function belong to that function. Nested @trace
@@ -1153,14 +1153,18 @@ function error_if_any_control_flow(expr)
     if expr.head === :macrocall
         name = _trace_macro_name(expr.args[1])
         if name === Symbol("@trace") || name === Symbol("@allowscalar")
-            foreach(error_if_any_control_flow, expr.args[3:end])
-            return expr
+            foreach(arg -> error_if_any_control_flow(mod, arg), expr.args[3:end])
+        else
+            # Ordinary macros such as @view can be used inside traced code.
+            # Inspect the expansion for control flow in the caller's scope.
+            error_if_any_control_flow(mod, trace_symbols_expr(mod, expr))
         end
+        return expr
     end
     if expr.head in CONTROL_FLOW_EXPRS
         error("Cannot use @trace on a block that contains a $(expr.head) statement")
     end
-    foreach(error_if_any_control_flow, expr.args)
+    foreach(arg -> error_if_any_control_flow(mod, arg), expr.args)
     return expr
 end
 

@@ -75,6 +75,10 @@ function nested_function_return(p)
     return result
 end
 
+macro return_from_traced_scope()
+    return esc(:(return 1))
+end
+
 @testset "Control flow belongs to its lexical scope" begin
     x = Reactant.to_rarray([2.0])
     exe = @compile nested_function_return(x)
@@ -82,6 +86,9 @@ end
     @test Float64(exe(Reactant.to_rarray([-2.0]))) == 2.0
     @test_throws LoadError @eval @trace if false
         return 1
+    end
+    @test_throws LoadError @eval @trace if false
+        @return_from_traced_scope
     end
     @test_throws LoadError @eval @trace for i in 1:2
         break
