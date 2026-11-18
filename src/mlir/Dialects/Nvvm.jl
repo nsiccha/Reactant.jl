@@ -1048,14 +1048,20 @@ The result `dst` is returned as an i8 type where the converted values are
 packed such that the value converted from the first element of `a` is 
 stored in the lower 4 bits of `dst` and the value converted from the second 
 element of `a` is stored in the upper 4 bits of `dst`.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 """
 function convert_bf16x2_to_f4x2(
-    src::Value;
+    src::Value,
+    scale_factor=nothing::Union{Nothing,Value};
     dst=nothing::Union{Nothing,IR.Type},
     relu=nothing,
     dstTy,
+    rnd=nothing,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[]
@@ -1063,8 +1069,11 @@ function convert_bf16x2_to_f4x2(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(dst) && push!(op_ty_results, dst)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.bf16x2.to.f4x2",
@@ -1090,18 +1099,31 @@ converted from the second element of `a` is stored in the upper 8 bits of
 `dst` with 2 MSB bits padded with zeros.
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector with 2 MSB bits padded with zeros.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 """
 function convert_bf16x2_to_f6x2(
-    src::Value; dst::IR.Type, relu=nothing, dstTy, location=Location()
+    src::Value,
+    scale_factor=nothing::Union{Nothing,Value};
+    dst::IR.Type,
+    relu=nothing,
+    dstTy,
+    rnd=nothing,
+    pzo=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[dst,]
     operands = Value[src,]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.bf16x2.to.f6x2",
@@ -1128,17 +1150,25 @@ lower 8 bits of `dst` and the value converted from the second element of
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector.
 The `rnd` and `sat` attributes specify the rounding and saturation modes 
-respectively.
+respectively. Conversions to `f8E4M3FN` and `f8E5M2` support `rn` and `rz`
+rounding. The `relu` attribute, when set, lowers to the \'.relu\' variant of
+the cvt instruction. The `pzo` attribute, when set, lowers to the \'.pzo\'
+variant of the cvt instruction. `pzo` is not supported for conversions to
+`f8E8M0FNU` or `f8E5M3FNU`.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
+Scaled conversions to `f8E5M3FNU` support `rn` and `rz` only.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_bf16x2_to_f8x2(
-    src::Value;
+    src::Value,
+    scale_factor=nothing::Union{Nothing,Value};
     dst::IR.Type,
     rnd=nothing,
     sat=nothing,
     relu=nothing,
     dstTy,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[dst,]
@@ -1146,9 +1176,11 @@ function convert_bf16x2_to_f8x2(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
     !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.bf16x2.to.f8x2",
@@ -1237,11 +1269,12 @@ as the type of the scale-factor currently.
 
 // Conversion with relu and saturation.
 %res2 = nvvm.convert.f4x2.to.bf16x2 %src
-    {relu = true, sat = #nvvm.sat_mode<satfinite>}
+    sat = <satfinite> relu = true
     : i8 (f4E2M1FN) -> vector<2xbf16>
 
 // Conversion with a packed ue8m0 scale-factor.
-%res3 = nvvm.convert.f4x2.to.bf16x2 %src, %scaleFactor
+%res3 = nvvm.convert.f4x2.to.bf16x2 %src
+    scale_factor = %scaleFactor
     : i8 (f4E2M1FN) -> vector<2xbf16>
 ```
 """
@@ -1337,11 +1370,12 @@ as the type of the scale-factor currently.
 
 // Conversion from f6E3M2FN with relu and saturation.
 %res2 = nvvm.convert.f6x2.to.bf16x2 %src
-    {relu = true, sat = #nvvm.sat_mode<satfinite>}
+    sat = <satfinite> relu = true
     : vector<2xi8> (f6E3M2FN) -> vector<2xbf16>
 
 // Conversion with a packed ue8m0 scale-factor.
-%res3 = nvvm.convert.f6x2.to.bf16x2 %src, %scaleFactor
+%res3 = nvvm.convert.f6x2.to.bf16x2 %src
+    scale_factor = %scaleFactor
     : vector<2xi8> (f6E2M3FN) -> vector<2xbf16>
 ```
 """
@@ -1437,11 +1471,12 @@ as the type of the scale-factor currently.
 
 // Conversion from f8E5M2 with relu and saturation.
 %res2 = nvvm.convert.f8x2.to.bf16x2 %src
-    {relu = true, sat = #nvvm.sat_mode<satfinite>}
+    sat = <satfinite> relu = true
     : vector<2xi8> (f8E5M2) -> vector<2xbf16>
 
 // Conversion with a packed ue8m0 scale-factor.
-%res3 = nvvm.convert.f8x2.to.bf16x2 %src, %scaleFactor
+%res3 = nvvm.convert.f8x2.to.bf16x2 %src
+    scale_factor = %scaleFactor
     : vector<2xi8> (f8E4M3FN) -> vector<2xbf16>
 ```
 """
@@ -1517,14 +1552,20 @@ The result `dst` is returned as an i8 type where the converted values are
 packed such that the value converted from the first element of `a` is 
 stored in the lower 4 bits of `dst` and the value converted from the second 
 element of `a` is stored in the upper 4 bits of `dst`.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 """
 function convert_f16x2_to_f4x2(
-    src::Value;
+    src::Value,
+    scale_factor=nothing::Union{Nothing,Value};
     dst=nothing::Union{Nothing,IR.Type},
     relu=nothing,
     dstTy,
+    rnd=nothing,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[]
@@ -1532,8 +1573,11 @@ function convert_f16x2_to_f4x2(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(dst) && push!(op_ty_results, dst)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f16x2.to.f4x2",
@@ -1559,18 +1603,31 @@ converted from the second element of `a` is stored in the upper 8 bits of
 `dst` with 2 MSB bits padded with zeros.
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector with 2 MSB bits padded with zeros.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 """
 function convert_f16x2_to_f6x2(
-    src::Value; dst::IR.Type, relu=nothing, dstTy, location=Location()
+    src::Value,
+    scale_factor=nothing::Union{Nothing,Value};
+    dst::IR.Type,
+    relu=nothing,
+    dstTy,
+    rnd=nothing,
+    pzo=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[dst,]
     operands = Value[src,]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f16x2.to.f6x2",
@@ -1597,20 +1654,38 @@ is stored in the upper 8 bits of `dst` and the value converted from the
 second element of `a` is stored in the lower 8 bits of `dst`.
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector.
+The `rnd` attribute specifies the rounding mode. Conversions to
+`f8E4M3FN` and `f8E5M2` support `rn` and `rz`. Conversions to
+`f8E5M3FNU` also support `rp`, except when a scale factor is present.
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction. `relu` and `pzo` are not
+supported for conversions to `f8E5M3FNU`.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f16x2_to_f8x2(
-    a::Value; dst::IR.Type, relu=nothing, dstTy, location=Location()
+    a::Value,
+    scale_factor=nothing::Union{Nothing,Value};
+    dst::IR.Type,
+    sat=nothing,
+    relu=nothing,
+    dstTy,
+    rnd=nothing,
+    pzo=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[dst,]
     operands = Value[a,]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
+    !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f16x2.to.f8x2",
@@ -1638,6 +1713,9 @@ The `relu` attribute clamps negative results to 0.
 
 The `sat` attribute determines saturation behavior.
 
+The `pzo` attribute, when set, lowers to the \'.pzo\' variant of the cvt
+instruction. `pzo` is not supported with the RS rounding mode.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f32x2_to_bf16x2(
@@ -1648,6 +1726,7 @@ function convert_f32x2_to_bf16x2(
     rnd=nothing,
     sat=nothing,
     relu=nothing,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[dst,]
@@ -1659,6 +1738,7 @@ function convert_f32x2_to_bf16x2(
     !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
     !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f32x2.to.bf16x2",
@@ -1680,17 +1760,23 @@ The result `dst` is returned as an i8 type where the converted values are
 packed such that the value converted from `a` is stored in the upper 4 bits 
 of `dst` and the value converted from `b` is stored in the lower 4 bits of 
 `dst`.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f32x2_to_f4x2(
     a::Value,
-    b::Value;
+    b::Value,
+    scale_factor=nothing::Union{Nothing,Value};
     dst=nothing::Union{Nothing,IR.Type},
     relu=nothing,
     dstTy,
+    rnd=nothing,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[]
@@ -1698,8 +1784,11 @@ function convert_f32x2_to_f4x2(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(dst) && push!(op_ty_results, dst)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f32x2.to.f4x2",
@@ -1725,20 +1814,34 @@ with 2 MSB bits padded with zeros and the value converted from `b` is
 stored in the lower 8 bits of `dst` with 2 MSB bits padded with zeros.
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector.
+The `rnd` attribute specifies the rounding mode (`rn` or `rz`).
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f32x2_to_f6x2(
-    a::Value, b::Value; dst::IR.Type, relu=nothing, dstTy, location=Location()
+    a::Value,
+    b::Value,
+    scale_factor=nothing::Union{Nothing,Value};
+    dst::IR.Type,
+    relu=nothing,
+    dstTy,
+    rnd=nothing,
+    pzo=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[dst,]
     operands = Value[a, b]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f32x2.to.f6x2",
@@ -1764,19 +1867,26 @@ and the value converted from `b` is stored in the lower 8 bits of `dst`.
 If `dst` is returned as a vector type, each converted value is stored as an 
 i8 element in the vector.
 The `rnd` and `sat` attributes specify the rounding and saturation modes respectively.
+Conversions to `f8E4M3FN` and `f8E5M2` support `rn` and `rz` rounding.
 The `relu` attribute, when set, lowers to the \'.relu\' variant of
-the cvt instruction.
+the cvt instruction. The `pzo` attribute, when set, lowers to the
+\'.pzo\' variant of the cvt instruction. `pzo` is not supported for
+conversions to `f8E8M0FNU` or `f8E5M3FNU`.
+The optional `scale_factor` operand is an i8 `ue8m0` scale.
+Scaled conversions to `f8E5M3FNU` support `rn` and `rz` only.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f32x2_to_f8x2(
     a::Value,
-    b::Value;
+    b::Value,
+    scale_factor=nothing::Union{Nothing,Value};
     dst::IR.Type,
     rnd=nothing,
     sat=nothing,
     relu=nothing,
     dstTy,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[dst,]
@@ -1784,9 +1894,11 @@ function convert_f32x2_to_f8x2(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[NamedAttribute("dstTy", dstTy),]
+    !isnothing(scale_factor) && push!(operands, scale_factor)
     !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
     !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f32x2.to.f8x2",
@@ -1814,6 +1926,9 @@ The `relu` attribute clamps negative results to 0.
 
 The `sat` attribute determines saturation behavior.
 
+The `pzo` attribute, when set, lowers to the \'.pzo\' variant of the cvt
+instruction. `pzo` is not supported with the RS rounding mode.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cvt)
 """
 function convert_f32x2_to_f16x2(
@@ -1824,6 +1939,7 @@ function convert_f32x2_to_f16x2(
     rnd=nothing,
     sat=nothing,
     relu=nothing,
+    pzo=nothing,
     location=Location(),
 )
     op_ty_results = IR.Type[dst,]
@@ -1835,6 +1951,7 @@ function convert_f32x2_to_f16x2(
     !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
     !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
     !isnothing(relu) && push!(attributes, NamedAttribute("relu", relu))
+    !isnothing(pzo) && push!(attributes, NamedAttribute("pzo", pzo))
 
     return create_operation(
         "nvvm.convert.f32x2.to.f16x2",
@@ -2507,6 +2624,98 @@ function cp_async_bulk_tensor_reduce(
 end
 
 """
+`cp_async_bulk_tensor_reduce_override`
+
+Initiates an asynchronous reduction of tensor data in global memory with the tensor
+data in shared::cta memory, while overriding specific fields of the opaque tensor-map
+object with explicit operands. It corresponds to the
+`cp.reduce.async.bulk.tensor.[1-5]d.global.shared::cta.*` PTX instructions qualified
+with `.override::*`.
+
+The `mode` attribute selects the store mode and `redKind` selects the reduction
+operation (`ADD`, `MIN`, `MAX`, `INC`, `DEC`, `AND`, `OR`, `XOR`) that combines the
+source data in shared memory with the destination data in global memory. The override
+variant is similar to the `cp.async.bulk.tensor.global.shared.cta.override` op described above.
+
+The optional `l2CacheHint` specifies a cache-eviction policy for the access.
+
+Examples:
+
+// override.addr (TILE, 1D) with ADD reduction
+```mlir
+nvvm.cp.async.bulk.tensor.reduce.override %tma_desc, %src, %override_addr, box[%d0], reduction = add : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr (IM2COL, 3D) with L2 cache hint and MIN reduction
+```mlir
+nvvm.cp.async.bulk.tensor.reduce.override %tma_desc, %src, %override_addr, box[%d0, %d1, %d2]
+  l2_cache_hint = %ch, reduction = min mode = im2col : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr.dim (TILE, 1D)
+```mlir
+nvvm.cp.async.bulk.tensor.reduce.override %tma_desc, %src, %override_addr,
+  box[%d0] tensor_size[%ts0], reduction = add : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr.dim.stride (TILE, 2D)
+```mlir
+nvvm.cp.async.bulk.tensor.reduce.override %tma_desc, %src, %override_addr,
+  box[%d0, %d1] tensor_size[%ts0, %ts1] lower_stride[%lstrd0] upper_stride[%ustrd], reduction = and : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-reduce-async-bulk-tensor)
+"""
+function cp_async_bulk_tensor_reduce_override(
+    tmaDescriptor::Value,
+    srcMem::Value,
+    overrideAddr::Value,
+    coordinates::Vector{Value},
+    tensorSize::Vector{Value},
+    lowerStride::Vector{Value},
+    upperStride=nothing::Union{Nothing,Value};
+    l2CacheHint=nothing::Union{Nothing,Value},
+    redKind,
+    mode=nothing,
+    location=Location(),
+)
+    op_ty_results = IR.Type[]
+    operands = Value[
+        tmaDescriptor, srcMem, overrideAddr, coordinates..., tensorSize..., lowerStride...
+    ]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[NamedAttribute("redKind", redKind),]
+    !isnothing(upperStride) && push!(operands, upperStride)
+    !isnothing(l2CacheHint) && push!(operands, l2CacheHint)
+    push!(
+        attributes,
+        operandsegmentsizes([
+            1,
+            1,
+            1,
+            length(coordinates),
+            length(tensorSize),
+            length(lowerStride),
+            Int(!isnothing(upperStride)),
+            Int(!isnothing(l2CacheHint)),
+        ]),
+    )
+    !isnothing(mode) && push!(attributes, NamedAttribute("mode", mode))
+
+    return create_operation(
+        "nvvm.cp.async.bulk.tensor.reduce.override",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
 `cp_async_bulk_tensor_global_shared_cta`
 
 Initiates an asynchronous copy of the tensor data from shared::cta
@@ -2548,6 +2757,116 @@ function cp_async_bulk_tensor_global_shared_cta(
 
     return create_operation(
         "nvvm.cp.async.bulk.tensor.global.shared.cta",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
+`cp_async_bulk_tensor_global_shared_cta_override`
+
+Initiates an asynchronous copy of tensor data from shared::cta memory to global
+memory while overriding specific fields of the opaque tensor-map object with
+explicit operands. It corresponds to the `cp.async.bulk.tensor.[1-5]d.*` PTX
+instructions qualified with `.override::*`.
+
+The `mode` attribute selects the store mode. The override variant is selected by
+which optional operands are provided:
+
+- `override.addr` (`.override::global_address`): only `overrideAddr` is given; the
+  global base address from the tensor-map is replaced. Supported in `TILE` (1D–5D),
+  `IM2COL`/`IM2COL_W` (3D–5D), and `TILE_SCATTER4` (2D, requires 5 coordinates).
+- `override.addr.dim` (1D, `TILE` only): `overrideAddr` plus `tensorSize` (one
+  element); also overrides the tensor global dimension.
+- `override.addr.dim.stride` (2D–5D, `TILE` only): `overrideAddr` plus `tensorSize`,
+  `lowerStride`, and `upperStride`; also overrides the global dimensions and strides.
+  The effective global stride is
+  `global_stride[i] = ((%stride{i} + (%upper_stride{i} << 32)) << 4)`.
+
+`overrideAddr` must be 16B aligned (a runtime error is raised otherwise) and the
+memory range `[%override_addr, %override_addr + 128 KiB)` must be allocated and
+accessible during execution. When overriding dimensions/strides, the base-address
+override is mandatory and the tensor start coordinates must be zero; otherwise the
+behavior is undefined.
+
+The optional `l2CacheHint` specifies a cache-eviction policy for the access.
+
+Examples:
+
+// override.addr (TILE, 1D)
+```mlir
+nvvm.cp.async.bulk.tensor.global.shared.cta.override %tma_desc, %src, %override_addr, box[%d0] : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr (IM2COL, 3D) with L2 cache hint
+```mlir
+nvvm.cp.async.bulk.tensor.global.shared.cta.override %tma_desc, %src, %override_addr, box[%d0, %d1, %d2]
+  l2_cache_hint = %ch mode = im2col : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr (TILE_SCATTER4, 2D) — 5 coordinates: x0, y0, y1, y2, y3
+```mlir
+nvvm.cp.async.bulk.tensor.global.shared.cta.override %tma_desc, %src, %override_addr, box[%x0, %y0, %y1, %y2, %y3]
+  mode = tile_scatter4 : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr.dim (TILE, 1D)
+```mlir
+nvvm.cp.async.bulk.tensor.global.shared.cta.override %tma_desc, %src, %override_addr,
+  box[%d0] tensor_size[%ts0] : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+// override.addr.dim.stride (TILE, 2D)
+```mlir
+nvvm.cp.async.bulk.tensor.global.shared.cta.override %tma_desc, %src, %override_addr,
+  box[%d0, %d1] tensor_size[%ts0, %ts1] lower_stride[%lstrd0] upper_stride[%ustrd] : !llvm.ptr, !llvm.ptr<3>, !llvm.ptr<1>
+```
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async-bulk-tensor)
+"""
+function cp_async_bulk_tensor_global_shared_cta_override(
+    tmaDescriptor::Value,
+    srcMem::Value,
+    overrideAddr::Value,
+    coordinates::Vector{Value},
+    tensorSize::Vector{Value},
+    lowerStride::Vector{Value},
+    upperStride=nothing::Union{Nothing,Value};
+    l2CacheHint=nothing::Union{Nothing,Value},
+    mode=nothing,
+    location=Location(),
+)
+    op_ty_results = IR.Type[]
+    operands = Value[
+        tmaDescriptor, srcMem, overrideAddr, coordinates..., tensorSize..., lowerStride...
+    ]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[]
+    !isnothing(upperStride) && push!(operands, upperStride)
+    !isnothing(l2CacheHint) && push!(operands, l2CacheHint)
+    push!(
+        attributes,
+        operandsegmentsizes([
+            1,
+            1,
+            1,
+            length(coordinates),
+            length(tensorSize),
+            length(lowerStride),
+            Int(!isnothing(upperStride)),
+            Int(!isnothing(l2CacheHint)),
+        ]),
+    )
+    !isnothing(mode) && push!(attributes, NamedAttribute("mode", mode))
+
+    return create_operation(
+        "nvvm.cp.async.bulk.tensor.global.shared.cta.override",
         location;
         operands,
         owned_regions,
@@ -3544,9 +3863,10 @@ end
 """
 `ex2`
 
-Computes a fast approximation of 2 raised to the power of the input
-value. The `ftz` attribute, when set, flushes subnormal inputs and
-results to sign-preserving zero.
+Computes a fast approximation of 2 raised to the power of the input value.
+Supports f32, vector<1xf32>, and packed f16x2 and bf16x2 values. The `ftz`
+attribute is optional for f32 and vector<1xf32>, unavailable for f16x2,
+and required for bf16x2.
 """
 function ex2(
     src::Value; res=nothing::Union{Nothing,IR.Type}, ftz=nothing, location=Location()
@@ -4311,11 +4631,17 @@ The `nvvm.mbarrier.arrive_drop.expect_tx` operation is similar to the
 `nvvm.mbarrier.arrive.expect_tx` operation except that it performs an
 `arrive_drop` operation instead of only an `arrive` operation.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive-drop)
 """
 function mbarrier_arrive_drop_expect_tx(
     addr::Value,
-    txcount::Value;
+    txcount::Value,
+    multicastMask=nothing::Union{Nothing,Value};
     res=nothing::Union{Nothing,IR.Type},
     scope=nothing,
     relaxed=nothing,
@@ -4326,6 +4652,7 @@ function mbarrier_arrive_drop_expect_tx(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
+    !isnothing(multicastMask) && push!(operands, multicastMask)
     !isnothing(res) && push!(op_ty_results, res)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
     !isnothing(relaxed) && push!(attributes, NamedAttribute("relaxed", relaxed))
@@ -4384,11 +4711,17 @@ of the expected arrival count applies to all the subsequent phases of the
 *mbarrier object*. The remaining semantics are identical to those of the
 `nvvm.mbarrier.arrive` operation.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive-drop)
 """
 function mbarrier_arrive_drop(
     addr::Value,
     count=nothing::Union{Nothing,Value};
+    multicastMask=nothing::Union{Nothing,Value},
     res=nothing::Union{Nothing,IR.Type},
     scope=nothing,
     relaxed=nothing,
@@ -4400,6 +4733,11 @@ function mbarrier_arrive_drop(
     successors = Block[]
     attributes = NamedAttribute[]
     !isnothing(count) && push!(operands, count)
+    !isnothing(multicastMask) && push!(operands, multicastMask)
+    push!(
+        attributes,
+        operandsegmentsizes([1, Int(!isnothing(count)), Int(!isnothing(multicastMask))]),
+    )
     !isnothing(res) && push!(op_ty_results, res)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
     !isnothing(relaxed) && push!(attributes, NamedAttribute("relaxed", relaxed))
@@ -4446,12 +4784,18 @@ The operation takes the following operands:
 - `predicate`: Optional predicate for conditional execution used only when lowering to
   inline-ptx.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive-drop)
 """
 function mbarrier_arrive_expect_tx(
     addr::Value,
     txcount::Value,
-    predicate=nothing::Union{Nothing,Value};
+    multicastMask=nothing::Union{Nothing,Value};
+    predicate=nothing::Union{Nothing,Value},
     res=nothing::Union{Nothing,IR.Type},
     scope=nothing,
     relaxed=nothing,
@@ -4462,7 +4806,14 @@ function mbarrier_arrive_expect_tx(
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
+    !isnothing(multicastMask) && push!(operands, multicastMask)
     !isnothing(predicate) && push!(operands, predicate)
+    push!(
+        attributes,
+        operandsegmentsizes([
+            1, 1, Int(!isnothing(multicastMask)), Int(!isnothing(predicate))
+        ]),
+    )
     !isnothing(res) && push!(op_ty_results, res)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
     !isnothing(relaxed) && push!(attributes, NamedAttribute("relaxed", relaxed))
@@ -4561,11 +4912,17 @@ The operation takes the following operands:
 - `relaxed`: When set to true, the `arrive` operation has relaxed memory semantics
   and does not provide any ordering or visibility guarantees.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive)
 """
 function mbarrier_arrive(
     addr::Value,
     count=nothing::Union{Nothing,Value};
+    multicastMask=nothing::Union{Nothing,Value},
     res=nothing::Union{Nothing,IR.Type},
     scope=nothing,
     relaxed=nothing,
@@ -4577,12 +4934,60 @@ function mbarrier_arrive(
     successors = Block[]
     attributes = NamedAttribute[]
     !isnothing(count) && push!(operands, count)
+    !isnothing(multicastMask) && push!(operands, multicastMask)
+    push!(
+        attributes,
+        operandsegmentsizes([1, Int(!isnothing(count)), Int(!isnothing(multicastMask))]),
+    )
     !isnothing(res) && push!(op_ty_results, res)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
     !isnothing(relaxed) && push!(attributes, NamedAttribute("relaxed", relaxed))
 
     return create_operation(
         "nvvm.mbarrier.arrive",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=(length(op_ty_results) == 0 ? nothing : op_ty_results),
+        result_inference=(length(op_ty_results) == 0 ? true : false),
+    )
+end
+
+"""
+`mbarrier_check_layout`
+
+The `nvvm.mbarrier.check_layout` operation tests whether the *mbarrier
+object* at `addr` was initialized with the layout named by `layout`.
+
+- `res`: An `i1` that is `true` when the *mbarrier object* has the queried
+  layout and `false` otherwise.
+
+The operation takes the following operand and attribute:
+- `addr`: A pointer to the memory location of the *mbarrier object*. The
+  `addr` must be a pointer to generic or shared::cta memory. When it is
+  generic, the underlying address must be within the shared::cta memory
+  space; otherwise the behavior is undefined.
+- `layout`: The mbarrier layout version to test for. Only `0`
+  (`layout::v0`) and `1` (`layout::v1`) are valid values. When it is
+  omitted, it defaults to `0`.
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-check-layout)
+"""
+function mbarrier_check_layout(
+    addr::Value; res=nothing::Union{Nothing,IR.Type}, layout=nothing, location=Location()
+)
+    op_ty_results = IR.Type[]
+    operands = Value[addr,]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[]
+    !isnothing(res) && push!(op_ty_results, res)
+    !isnothing(layout) && push!(attributes, NamedAttribute("layout", layout))
+
+    return create_operation(
+        "nvvm.mbarrier.check_layout",
         location;
         operands,
         owned_regions,
@@ -4603,16 +5008,26 @@ current phase. The `scope` specifies the set of threads that can directly
 observe the memory synchronizing effect of the `mbarrier.complete_tx`
 operation. `CTA` and `CLUSTER` are the only allowed values for `scope`.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-complete-tx)
 """
 function mbarrier_complete_tx(
-    addr::Value, txcount::Value; scope=nothing, location=Location()
+    addr::Value,
+    txcount::Value,
+    multicastMask=nothing::Union{Nothing,Value};
+    scope=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[]
     operands = Value[addr, txcount]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
+    !isnothing(multicastMask) && push!(operands, multicastMask)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
 
     return create_operation(
@@ -4636,14 +5051,26 @@ specifies the set of threads that can directly observe the memory
 synchronizing effect of the `mbarrier.expect_tx` operation. `CTA`
 and `CLUSTER` are the only allowed values for `scope`.
 
+When `multicastMask` is present, the operation updates the barrier at the
+same shared-memory offset in each CTA selected by the 32-bit mask. The
+`addr` must be in shared::cluster space. Both CTA and cluster scopes are
+supported. Omitting the mask preserves the non-multicast behavior.
+
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-expect-tx)
 """
-function mbarrier_expect_tx(addr::Value, txcount::Value; scope=nothing, location=Location())
+function mbarrier_expect_tx(
+    addr::Value,
+    txcount::Value,
+    multicastMask=nothing::Union{Nothing,Value};
+    scope=nothing,
+    location=Location(),
+)
     op_ty_results = IR.Type[]
     operands = Value[addr, txcount]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
+    !isnothing(multicastMask) && push!(operands, multicastMask)
     !isnothing(scope) && push!(attributes, NamedAttribute("scope", scope))
 
     return create_operation(
@@ -4677,12 +5104,20 @@ The operation takes the following operands:
   the behavior is undefined.
 - `count`: Integer specifying the number of threads that will participate in barrier
   synchronization. Must be in the range [1, 2²⁰ - 1].
+- `layout`: Optional in-memory layout to initialize the *mbarrier object*
+  with. Only `0` (`layout::v0`) and `1` (`layout::v1`) are valid values.
+  When it is omitted, it defaults to `0`. The layout of an existing
+  *mbarrier object* can be queried with `nvvm.mbarrier.check_layout`.
 - `predicate`: Optional predicate for conditional execution.
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-init)
 """
 function mbarrier_init(
-    addr::Value, count::Value, predicate=nothing::Union{Nothing,Value}; location=Location()
+    addr::Value,
+    count::Value,
+    predicate=nothing::Union{Nothing,Value};
+    layout=nothing,
+    location=Location(),
 )
     op_ty_results = IR.Type[]
     operands = Value[addr, count]
@@ -4690,6 +5125,7 @@ function mbarrier_init(
     successors = Block[]
     attributes = NamedAttribute[]
     !isnothing(predicate) && push!(operands, predicate)
+    !isnothing(layout) && push!(attributes, NamedAttribute("layout", layout))
 
     return create_operation(
         "nvvm.mbarrier.init",
@@ -5053,12 +5489,12 @@ scaling operands for both A and B matrices.
 %d = nvvm.mma.block_scale A[%a0, %a1] B[%b0, %b1] C[%c0, %c1]
                           scaleA[%scaleAData, %byteIdA, %threadIdA]
                           scaleB[%scaleBData, %byteIdB, %threadIdB]
-                          {shape = #nvvm.shape<m = 16, n = 8, k = 64>,
-                           multiplicandAPtxType = #nvvm.mma_type<e2m1>,
-                           multiplicandBPtxType = #nvvm.mma_type<e2m1>,
-                           scaleVecSize = #nvvm.scale_vec_size<x2>,
-                           blockScaleFormat = #nvvm.block_scale_format<ue8m0>,
-                           kind = #nvvm.block_scale_kind<mxf4nvf4>}
+                          shape = <m = 16, n = 8, k = 64>,
+                          multiplicand_a_ptx_type = e2m1,
+                          multiplicand_b_ptx_type = e2m1,
+                          scale_vec_size = x2,
+                          block_scale_format = ue8m0,
+                          kind = mxf4nvf4
     : (vector<4xf16>, vector<2xf16>, vector<2xf32>) -> !llvm.struct<(f32, f32)>
 ```
 """
@@ -5185,9 +5621,8 @@ combinations are possible for certain layouts according to the table below.
 %128 = nvvm.mma.sync A[%120, %121, %122, %123]
                      B[%124, %125]
                      C[%126, %127]
-                     {layoutA = #nvvm.mma_layout<row>,
-                      layoutB = #nvvm.mma_layout<col>,
-                      shape = {k = 16 : i32, m = 16 : i32, n = 8 : i32}}
+                     shape = <m = 16, n = 8, k = 16>,
+                     layout_a = row, layout_b = col
     : (vector<2xf16>, vector<2xf16>, vector<2xf16>)
        -> !llvm.struct<(vector<2xf16>, vector<2xf16>)>
 ```
@@ -5271,12 +5706,12 @@ always use ordered metadata (sm_90+).
                              sparseMetadata[%meta] selector[%sel]
                              scaleA[%scaleAData, %byteIdA, %threadIdA]
                              scaleB[%scaleBData, %byteIdB, %threadIdB]
-                             {shape = #nvvm.shape<m = 16, n = 8, k = 128>,
-                              multiplicandAPtxType = #nvvm.mma_type<e2m1>,
-                              multiplicandBPtxType = #nvvm.mma_type<e2m1>,
-                              scaleVecSize = #nvvm.scale_vec_size<x2>,
-                              blockScaleFormat = #nvvm.block_scale_format<ue8m0>,
-                              kind = #nvvm.block_scale_kind<mxf4>}
+                             shape = <m = 16, n = 8, k = 128>,
+                             multiplicand_a_ptx_type = e2m1,
+                             multiplicand_b_ptx_type = e2m1,
+                             ordered_metadata, scale_vec_size = x2,
+                             block_scale_format = ue8m0,
+                             kind = mxf4
     : (vector<2xf16>, vector<2xf16>, vector<2xf32>) -> !llvm.struct<(f32, f32)>
 ```
 """
@@ -5382,13 +5817,13 @@ non-zero elements in compressed format.
 ```mlir
 %d = nvvm.mma.sp.sync A[%a0, %a1] B[%b0, %b1] C[%c0, %c1]
                       sparseMetadata[%meta] selector[%sel]
-                      {shape = {k = 32 : i32, m = 16 : i32, n = 8 : i32}}
+                      shape = <m = 16, n = 8, k = 32>
     : (vector<2xf16>, vector<2xf16>, vector<2xf16>) -> !llvm.struct<(vector<2xf16>, vector<2xf16>)>
 
 // With ordered metadata:
 %d = nvvm.mma.sp.sync A[%a0, %a1] B[%b0, %b1] C[%c0, %c1]
                       sparseMetadata[%meta] selector[%sel]
-                      {orderedMetadata, shape = {k = 32 : i32, m = 16 : i32, n = 8 : i32}}
+                      shape = <m = 16, n = 8, k = 32>, ordered_metadata
     : (vector<2xf16>, vector<2xf16>, vector<2xf16>) -> !llvm.struct<(vector<2xf16>, vector<2xf16>)>
 ```
 """
@@ -5455,8 +5890,8 @@ transposed. Each matrix element holds 16-bit data as indicated by the
 
 # Example
 ```mlir
-%dst = nvvm.movmatrix %src {shape = #nvvm.ld_st_matrix_shape<m = 8, n = 8>,
-                            eltType = #nvvm.ld_st_matrix_elt_type<b16>} : i32
+%dst = nvvm.movmatrix %src, shape = <m = 8, n = 8>,
+                      element_type = <b16> : i32
 ```
 """
 function movmatrix(
@@ -5479,6 +5914,50 @@ function movmatrix(
 
     return create_operation(
         "nvvm.movmatrix",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=(length(op_ty_results) == 0 ? nothing : op_ty_results),
+        result_inference=(length(op_ty_results) == 0 ? true : false),
+    )
+end
+
+"""
+`mulf`
+
+The `nvvm.mulf` operation performs floating point multiplication of two 
+floating point operands of the same type.
+
+The rounding mode is specified by the `rnd` attribute, saturation mode by 
+the `sat` attribute, and flush-to-zero by the `ftz` attribute.
+
+For more information, see PTX ISA:
+- [floating point multiplication](https://docs.nvidia.com/cuda/parallel-thread-execution/#floating-point-instructions-mul)
+- [half-precision floating point multiplication](https://docs.nvidia.com/cuda/parallel-thread-execution/#half-precision-floating-point-instructions-mul)
+"""
+function mulf(
+    lhs::Value,
+    rhs::Value;
+    res=nothing::Union{Nothing,IR.Type},
+    rnd=nothing,
+    sat=nothing,
+    ftz=nothing,
+    location=Location(),
+)
+    op_ty_results = IR.Type[]
+    operands = Value[lhs, rhs]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[]
+    !isnothing(res) && push!(op_ty_results, res)
+    !isnothing(rnd) && push!(attributes, NamedAttribute("rnd", rnd))
+    !isnothing(sat) && push!(attributes, NamedAttribute("sat", sat))
+    !isnothing(ftz) && push!(attributes, NamedAttribute("ftz", ftz))
+
+    return create_operation(
+        "nvvm.mulf",
         location;
         operands,
         owned_regions,
@@ -5718,6 +6197,45 @@ function prefetch(
 
     return create_operation(
         "nvvm.prefetch",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
+`prefetch_valid_addr`
+
+Prefetches data from the address given by `addr` into the cache selected by
+`cacheLevel`. Currently, only L1 is supported and the operation requests a
+prefetch of at least 32 bytes.
+
+The operand must be a global or generic pointer. A generic address must
+refer to the global state space. At least one byte at `addr` must be valid
+and accessible for this access; otherwise, behavior is undefined and the
+instruction may fault.
+
+Examples:
+```mlir
+nvvm.prefetch.valid_addr level = L1, %global_ptr : !llvm.ptr<1>
+nvvm.prefetch.valid_addr level = L1, %generic_ptr : !llvm.ptr
+```
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-prefetch-prefetchu)
+"""
+function prefetch_valid_addr(addr::Value; cacheLevel, location=Location())
+    op_ty_results = IR.Type[]
+    operands = Value[addr,]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[NamedAttribute("cacheLevel", cacheLevel),]
+
+    return create_operation(
+        "nvvm.prefetch.valid_addr",
         location;
         operands,
         owned_regions,
@@ -5986,6 +6504,146 @@ function read_ptx_sreg_smid(;
 end
 
 """
+`sparse_compress`
+
+Compresses elements from a dense vector `data` into a structured sparse
+vector `compressed_data` using the 2:4 sparsity pattern: 2 out of every
+4 elements of `data` are selected. The indices of the selected elements
+are returned in `metadata`.
+
+The element size (8 or 16 bits) is given by the element type of `data`
+and `compressed_data`. `data` must occupy `2 * repFactor` 32-bit
+registers, where the repeat factor `repFactor` is a power of two from 1
+to 64.
+
+Arguments:
+- `spDesc`: Sparsity descriptor specifying the selection operation and the
+  element data type.
+- `data`: Dense vector containing the elements to be compressed.
+- `idxSize`: Size in bits of each metadata index (2 or 4).
+
+Results:
+- `metadata`: Indices of the selected elements, stored in
+  `ceil(repFactor * idxSize / elemSize)` 32-bit registers. A single
+  register may be either `i32` or `vector<1xi32>`.
+- `compressed_data`: Selected elements; half as many as in `data`.
+
+Examples:
+```mlir
+// 8-bit elements, 2-bit indices, repeat factor of 1.
+%metadata, %compressed_data = nvvm.sparse.compress %spdesc, %data
+    idx_size = 2
+    : i32, vector<8xi8> -> i32, vector<4xi8>
+
+// 16-bit elements, 4-bit indices, repeat factor of 8.
+%metadata, %compressed_data = nvvm.sparse.compress %spdesc, %data
+    idx_size = 4
+    : i32, vector<32xi16> -> vector<2xi32>, vector<16xi16>
+```
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#data-movement-and-conversion-instructions-spcompress)
+"""
+function sparse_compress(
+    spDesc::Value,
+    data::Value;
+    metadata::IR.Type,
+    compressed_data::IR.Type,
+    idxSize,
+    location=Location(),
+)
+    op_ty_results = IR.Type[metadata, compressed_data]
+    operands = Value[spDesc, data]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[NamedAttribute("idxSize", idxSize),]
+
+    return create_operation(
+        "nvvm.sparse.compress",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
+`sparse_decompress`
+
+Decompresses elements from a structured sparse vector `compressed_data`
+into a dense vector `data`, using the indices stored in `metadata`. Dense
+positions not selected by `metadata` are set to zero.
+
+`data` consists of `repFactor` groups of `numTgt` elements, and
+`compressed_data` holds `numSrc` elements for each group, i.e. the
+sparsity factor is `numSrc:numTgt`. Both `numSrc` and the repeat factor
+`repFactor` are derived from the vector lengths. The element size
+`elemSize` (8 or 16 bits) is given by the element type of `data` and
+`compressed_data`.
+
+The following conditions must hold:
+- `numSrc:numTgt` is one of 1:2, 1:4, 1:8, 1:16, 2:4, 2:8, 2:16, 4:8, or
+  4:16.
+- `repFactor` is a power of two from 1 to 64.
+- `numTgt * elemSize * repFactor` is between 32 and 4096.
+- `numSrc * elemSize` is at most 32.
+- `idxSize` is 2 only if `numTgt` is at most 4.
+- `metadata` occupies `ceil(numSrc * idxSize * repFactor / 32)` 32-bit
+  registers. A single register may be either `i32` or `vector<1xi32>`.
+
+Arguments:
+- `metadata`: Indices of the selected elements.
+- `compressed_data`: Compressed vector containing the selected elements.
+- `idxSize`: Size in bits of each metadata index (2 or 4).
+- `numTgt`: Size of each group in `data` (2, 4, 8, or 16).
+
+Results:
+- `data`: Dense vector containing the decompressed elements.
+
+Examples:
+```mlir
+// 2:4 sparsity, 8-bit elements, 2-bit indices, repeat factor of 1.
+%res = nvvm.sparse.decompress %metadata, %compdata idx_size = 2 num_tgt = 4
+    : i32, vector<2xi8> -> vector<4xi8>
+
+// 2:4 sparsity, 16-bit elements, 4-bit indices, repeat factor of 64.
+%res = nvvm.sparse.decompress %metadata, %compdata idx_size = 4 num_tgt = 4
+    : vector<16xi32>, vector<128xi16> -> vector<256xi16>
+```
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#data-movement-and-conversion-instructions-spdecompress)
+"""
+function sparse_decompress(
+    metadata::Value,
+    compressed_data::Value;
+    data::IR.Type,
+    idxSize,
+    numTgt,
+    location=Location(),
+)
+    op_ty_results = IR.Type[data,]
+    operands = Value[metadata, compressed_data]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[
+        NamedAttribute("idxSize", idxSize), NamedAttribute("numTgt", numTgt)
+    ]
+
+    return create_operation(
+        "nvvm.sparse.decompress",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
 `sqrt_approx`
 
 Computes a fast approximation of the square root of the input value
@@ -6181,16 +6839,25 @@ end
 The `tcgen05.alloc` Op allocates tensor core memory for
 the amount specified by `nCols` and writes the destination
 address to the `addr` argument. The `nCols` operand specifies the
-number of columns to be allocated and it must be a power-of-two.
+number of columns to be allocated and it must be a power-of-two
+for non-exclusive allocations and a multiple of 32 for exclusive
+allocations. The `exclusive` attribute requests an exclusive
+allocation and defaults to `false`. When `exclusive` is `true`, the
+`.exclusive` variant is emitted, which claims ownership of the
+allocation permit. No other allocation may exist at the same time
+as an exclusive allocation.
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-memory-alloc-manage-instructions)
 """
-function tcgen05_alloc(addr::Value, nCols::Value; group=nothing, location=Location())
+function tcgen05_alloc(
+    addr::Value, nCols::Value; group=nothing, isExclusive=nothing, location=Location()
+)
     op_ty_results = IR.Type[]
     operands = Value[addr, nCols]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
     !isnothing(group) && push!(attributes, NamedAttribute("group", group))
+    !isnothing(isExclusive) && push!(attributes, NamedAttribute("isExclusive", isExclusive))
 
     return create_operation(
         "nvvm.tcgen05.alloc",
@@ -6259,12 +6926,9 @@ that needs to be copied.
 
 # Example
 ```mlir
-  nvvm.tcgen05.cp %taddr, %smem_desc {
-    group = #nvvm.tcgen05_group<cta_2>,
-    shape = #nvvm.tcgen05_cp_shape<shape_64x128b>,
-    multicast = #nvvm.tcgen05_cp_multicast<warpx2_01_23>,
-    srcFormat = #nvvm.tcgen05_cp_src_fmt<b6x16_p32>
-  }
+  nvvm.tcgen05.cp %taddr, %smem_desc, shape = shape_64x128b
+    group = <cta_2> multicast = warpx2_01_23
+    source_format = #nvvm.tcgen05_cp_src_fmt<b6x16_p32>
 ```
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tensorcore-5th-generation-instructions-tcgen05-cp)
 """
@@ -6304,16 +6968,24 @@ end
 The `tcgen05.dealloc` Op de-allocates the tensor core memory
 specified by `tmemAddr`, which must be from a previous tensor
 memory allocation. The `nCols` operand specifies the number
-of columns to be de-allocated, and it must be a power-of-two.
+of columns to be de-allocated, and it must be a power-of-two
+for non-exclusive deallocations and a multiple of 32 for exclusive
+deallocations. The `exclusive` attribute defaults to `false`. When
+`exclusive` is `true`, the `.exclusive` variant is emitted. Memory
+must be deallocated with `exclusive` if and only if it was allocated
+with `exclusive`.
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-memory-alloc-manage-instructions)
 """
-function tcgen05_dealloc(taddr::Value, nCols::Value; group=nothing, location=Location())
+function tcgen05_dealloc(
+    taddr::Value, nCols::Value; group=nothing, isExclusive=nothing, location=Location()
+)
     op_ty_results = IR.Type[]
     operands = Value[taddr, nCols]
     owned_regions = Region[]
     successors = Block[]
     attributes = NamedAttribute[]
     !isnothing(group) && push!(attributes, NamedAttribute("group", group))
+    !isnothing(isExclusive) && push!(attributes, NamedAttribute("isExclusive", isExclusive))
 
     return create_operation(
         "nvvm.tcgen05.dealloc",
@@ -6397,9 +7069,8 @@ of `num` and `shape` attributes:
 
 # Example
 ```mlir
-  nvvm.tcgen05.ld %tmemAddr, %offset pack {
-    shape = #nvvm.tcgen05_ldst_shape<shape_16x32bx2>,
-  } : <2xi32>
+  nvvm.tcgen05.ld %tmemAddr, %offset pack
+    shape = shape_16x32bx2 : vector<2xi32>
 ```
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-instructions-tcgen05-st)
@@ -6471,13 +7142,11 @@ of `num` and `shape` attributes:
 
 # Example
 ```mlir
-  %data, %redval = nvvm.tcgen05.ld.red %addr, %offset {
-    shape = #nvvm.tcgen05_ldst_shape<shape_16x32bx2>,
-  } : <2xi32>, i32
+  %data, %redval = nvvm.tcgen05.ld.red min %addr, %offset
+    shape = shape_16x32bx2 : vector<2xi32>, i32
 
-  %data, %redval = nvvm.tcgen05.ld.red %addr {
-    shape = #nvvm.tcgen05_ldst_shape<shape_32x32b>,
-  } : <2xf32>, f32
+  %data, %redval = nvvm.tcgen05.ld.red min %addr
+    shape = shape_32x32b : vector<2xf32>, f32
 ```
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-instructions-tcgen05-ld)
@@ -6504,6 +7173,75 @@ function tcgen05_ld_red(
 
     return create_operation(
         "nvvm.tcgen05.ld.red",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
+`tcgen05_mma_block_scale_decompress_b`
+
+The `tcgen05.mma.block_scale.decompress_b` operation is similar to
+`tcgen05.mma.decompress_b`, but with block scaling support for the A and B
+matrices.
+
+```
+D = (A * scale_a)  * (B * scale_b)`      // if `enableInputD` is false
+D = (A * scale_a)  * (B * scale_b) + D`
+```
+
+where:
+- A is an M x (K / 2) matrix in tensor memory or described using shared memory descriptor
+- B is a `K x N` matrix described using shared memory descriptor
+- D is an `M x N` accumulator matrix in tensor memory
+- `scale_a` and `scale_b` are matrices in tensor memory used to scale `A` and `B` respectively
+
+The `shared memory descriptor` can be generated using `tcgen05.mma_smem_desc` Op
+
+- `idesc` is a 32-bit value representing the [Instruction Descriptor](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-instruction-descriptor)
+
+- `decompressBMetadata` is a decompress metadata of B matrix
+
+Default Attributes:
+- `blockScale` specifies the block scaling granularity
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-mma-instructions-mma)
+"""
+function tcgen05_mma_block_scale_decompress_b(
+    matrixD::Value,
+    matrixA::Value,
+    matrixB::Value,
+    idesc::Value,
+    enableInputD::Value,
+    scaleA::Value,
+    scaleB::Value,
+    decompressBMetadata::Value;
+    ctaGroup,
+    blockScale=nothing,
+    collectorOpA=nothing,
+    collectorOpB=nothing,
+    location=Location(),
+)
+    op_ty_results = IR.Type[]
+    operands = Value[
+        matrixD, matrixA, matrixB, idesc, enableInputD, scaleA, scaleB, decompressBMetadata
+    ]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[NamedAttribute("ctaGroup", ctaGroup),]
+    !isnothing(blockScale) && push!(attributes, NamedAttribute("blockScale", blockScale))
+    !isnothing(collectorOpA) &&
+        push!(attributes, NamedAttribute("collectorOpA", collectorOpA))
+    !isnothing(collectorOpB) &&
+        push!(attributes, NamedAttribute("collectorOpB", collectorOpB))
+
+    return create_operation(
+        "nvvm.tcgen05.mma.block_scale.decompress_b",
         location;
         operands,
         owned_regions,
@@ -6579,6 +7317,83 @@ function tcgen05_mma_block_scale(
 
     return create_operation(
         "nvvm.tcgen05.mma.block_scale",
+        location;
+        operands,
+        owned_regions,
+        successors,
+        attributes,
+        results=op_ty_results,
+        result_inference=false,
+    )
+end
+
+"""
+`tcgen05_mma_decompress_b`
+
+The `tcgen05.mma.decompress_b` operation is an asynchronous tensor core
+instruction that decompresses the B matrix and performs matrix
+multiplication, accumulation in a single fused operation. It targets
+5th-generation tensor cores, providing developers with fine-grained
+control over execution and scheduling.
+
+```
+D = A * B                            // if `enableInputD` is false
+D = A * B + D                        // otherwise
+```
+
+where:
+- A is an `M x K` matrix in tensor memory or described using shared memory descriptor
+- B is a `K x N` matrix described using shared memory descriptor
+- D is an `M x N` accumulator matrix in tensor memory
+
+The `shared memory descriptor` can be generated using `tcgen05.mma_smem_desc` Op
+
+- `idesc` is a 32-bit value representing the [Instruction Descriptor](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-instruction-descriptor)
+
+- `decompressBMetadata` is a decompress metadata of B matrix
+
+Optional Operands:
+- `disableOutputLane` is a vector mask for selective output
+  * vector<4 x i32> when ctaGroup is CTA_1
+  * vector<8 x i32> when ctaGroup is CTA_2
+
+Required Attributes:
+- `ctaGroup` specifies CTA group configuration
+  * cta_1: MMA will be performed on the current thread\'s CTA
+  * cta_2: MMA will be performed on the current thread and it\'s peer CTA
+
+Default Attributes:
+- collectorOpA is a Tcgen05MMACollectorOp attribute with matrix A as the collector buffer
+- collectorOpB is a Tcgen05MMACollectorOp attribute with matrix B as the collector buffer
+
+[For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-mma-instructions-mma)
+"""
+function tcgen05_mma_decompress_b(
+    matrixD::Value,
+    matrixA::Value,
+    matrixB::Value,
+    idesc::Value,
+    enableInputD::Value,
+    decompressBMetadata::Value,
+    disableOutputLane=nothing::Union{Nothing,Value};
+    ctaGroup,
+    collectorOpA=nothing,
+    collectorOpB=nothing,
+    location=Location(),
+)
+    op_ty_results = IR.Type[]
+    operands = Value[matrixD, matrixA, matrixB, idesc, enableInputD, decompressBMetadata]
+    owned_regions = Region[]
+    successors = Block[]
+    attributes = NamedAttribute[NamedAttribute("ctaGroup", ctaGroup),]
+    !isnothing(disableOutputLane) && push!(operands, disableOutputLane)
+    !isnothing(collectorOpA) &&
+        push!(attributes, NamedAttribute("collectorOpA", collectorOpA))
+    !isnothing(collectorOpB) &&
+        push!(attributes, NamedAttribute("collectorOpB", collectorOpB))
+
+    return create_operation(
+        "nvvm.tcgen05.mma.decompress_b",
         location;
         operands,
         owned_regions,
@@ -7132,9 +7947,8 @@ of `num` and `shape` attributes:
 
 # Example
 ```mlir
-  nvvm.tcgen05.st %tmemAddr, %val, %offset unpack {
-    shape = #nvvm.tcgen05_ldst_shape<shape_16x32bx2>,
-  } : <2xi32>
+  nvvm.tcgen05.st %tmemAddr, %val, %offset unpack
+    shape = shape_16x32bx2 : vector<2xi32>
 ```
 
 [For more information, see PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/#tcgen05-instructions-tcgen05-st)

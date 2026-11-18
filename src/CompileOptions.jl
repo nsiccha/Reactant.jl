@@ -26,6 +26,13 @@ communication.
     extend_comm::Int = 0
     dus_to_pad_manual_comp_comm::Int = 0 # 2
     dus_to_pad_comm::Int = 0
+    # The slices feeding the update of a DUS on a sharded dimension are moved down to the
+    # DUS: the update is recomputed at the full extent (the discarded part bounded by
+    # `dus_sink_slices_max_extra_percent` of the window), leaving a DUS of a slice at its
+    # own window, which XLA partitions without communication, instead of a halo exchange
+    # per slice the update was narrowed to.
+    dus_sink_slices_comm::Int = 1
+    dus_sink_slices_max_extra_percent::Int = 100
     concat_two_operands_comm::Int = 0
     concat_to_pad_comm::Int = 0
     concat_to_dus::Int = 1
@@ -47,6 +54,23 @@ function Base.String(options::OptimizeCommunicationOptions)
         join(["$(f)=$(getfield(options, f))" for f in fieldnames(typeof(options))], " ") *
         "}"
     )
+end
+
+"""
+    CommOptions
+
+Fine-grained control over the optimization and lowering passes related to the `comm` dialect.
+
+## Options
+
+  - `lowering_target::Symbol`: the target backend for the communication operations. Valid values are `:jit` (default) and `:ffi`.
+    `:jit` lowers ops to `enzymexla.jit_call` ops, while `:ffi` lowers ops to `stablehlo.custom_call` ops.
+  - `legalize_mpi_to_nccl::Bool`: whether to legalize `comm.mpi` ops to `comm.nccl` ops when backend is CUDA.
+    Defaults to `true`.
+"""
+@kwdef struct CommOptions
+    lowering_target::Symbol = :jit
+    legalize_mpi_to_nccl::Bool = true
 end
 
 """
@@ -100,7 +124,10 @@ Fine-grained control over the compilation options for the Reactant compiler.
           and may change in future versions of Reactant. It is recommended to use this
           option for most users.
        2. `:none`: No optimization passes will be run.
-       3.  Other predefined options are: `:before_kernel`, `:before_jit`, `:before_raise`,
+       3. `:kernelad`: Same as `:all`, but kernel calls are exposed to Enzyme as
+          `gpu_wrapper` regions containing `affine.parallel` loops so that they can be
+          differentiated, and compiled as JIT calls after differentiation.
+       4.  Other predefined options are: `:before_kernel`, `:before_jit`, `:before_raise`,
           `:before_enzyme`, `:after_enzyme`, `:just_batch`, `:canonicalize`, `:only_enzyme`.
   - `no_nan`: If `true`, the optimization passes will assume that the function does not
     produce NaN values. This can lead to more aggressive optimizations **(and potentially
@@ -191,6 +218,13 @@ Fine-grained control over the compilation options for the Reactant compiler.
     optimization passes. (Default: `false`).
   - `disable_pad_optimization_passes`: Disables the pad optimization passes. This is
     `false` by default.
+  - `disable_dot_formation_passes`: Disables turning contractions written as
+    `reduce(mul)` into `dot_general`. On GPU, small contractions can run faster as fused
+    reductions. (Default: `false`).
+  - `max_reused_const_prop_size`: Constant propagation folds an op whose non-splat
+    constant operand has other users (so the folded constant is added beside it) only when
+    the result has at most this many elements, e.g. small index and mask computations. `0`
+    folds such an op only when a non-splat operand dies with it. (Default: `1024`).
   - `disable_licm_optimization_passes`: Disables the Loop Invariant Code Motion (LICM)
     optimization passes. (Default: `false`).
   - `loop_unswitch_threshold`: Threshold passed to the `loop_unswitch` pattern inside the
@@ -228,6 +262,8 @@ struct CompileOptions
     legalize_chlo_to_stablehlo::Bool
     # backend specific options
     cudnn_hlo_optimize::Bool
+    # comm dialect (MPI, NCCL, etc.) options
+    comm_options::CommOptions
     # sharding options
     shardy_passes::Union{Symbol,ShardyPropagationOptions}
     optimize_then_pad::Bool
@@ -246,6 +282,8 @@ struct CompileOptions
     ## private options for ablation studies
     disable_scatter_gather_optimization_passes::Bool
     disable_pad_optimization_passes::Bool
+    disable_dot_formation_passes::Bool
+    max_reused_const_prop_size::Int
     disable_licm_optimization_passes::Bool
     loop_unswitch_threshold::Int
     excluded_passes::Vector{String}
@@ -273,6 +311,7 @@ function CompileOptions(;
     raise_first::Bool=false,
     legalize_chlo_to_stablehlo::Bool=false,
     cudnn_hlo_optimize::Bool=false,
+    comm_options::CommOptions=CommOptions(),
     shardy_passes::Union{Symbol,ShardyPropagationOptions}=:post_sdy_propagation,
     optimize_then_pad::Bool=true,
     optimize_communications::Union{Bool,OptimizeCommunicationOptions}=true,
@@ -284,6 +323,8 @@ function CompileOptions(;
     xla_debug_options::NamedTuple=NamedTuple(),
     disable_scatter_gather_optimization_passes::Bool=false,
     disable_pad_optimization_passes::Bool=false,
+    disable_dot_formation_passes::Bool=false,
+    max_reused_const_prop_size::Int=1024,
     disable_licm_optimization_passes::Bool=false,
     loop_unswitch_threshold::Int=10,
     excluded_passes::Vector{String}=String[],
@@ -306,6 +347,7 @@ function CompileOptions(;
     if optimization_passes isa Symbol
         @assert optimization_passes in [
             :all,
+            :kernelad,
             :before_kernel,
             :before_jit,
             :before_raise,
@@ -340,6 +382,7 @@ function CompileOptions(;
         raise_first,
         legalize_chlo_to_stablehlo,
         cudnn_hlo_optimize,
+        comm_options,
         shardy_passes,
         optimize_then_pad,
         optimize_communications,
@@ -353,6 +396,8 @@ function CompileOptions(;
         xla_debug_options,
         disable_scatter_gather_optimization_passes,
         disable_pad_optimization_passes,
+        disable_dot_formation_passes,
+        max_reused_const_prop_size,
         disable_licm_optimization_passes,
         loop_unswitch_threshold,
         excluded_passes,
@@ -398,6 +443,7 @@ function __compile_options_with_reversed_propagation(compile_options::CompileOpt
         compile_options.raise_first,
         compile_options.legalize_chlo_to_stablehlo,
         compile_options.cudnn_hlo_optimize,
+        compile_options.comm_options,
         compile_options.shardy_passes,
         compile_options.optimize_then_pad,
         compile_options.optimize_communications,
@@ -411,6 +457,8 @@ function __compile_options_with_reversed_propagation(compile_options::CompileOpt
         compile_options.xla_debug_options,
         compile_options.disable_scatter_gather_optimization_passes,
         compile_options.disable_pad_optimization_passes,
+        compile_options.disable_dot_formation_passes,
+        compile_options.max_reused_const_prop_size,
         compile_options.disable_licm_optimization_passes,
         compile_options.loop_unswitch_threshold,
         compile_options.excluded_passes,
@@ -443,6 +491,7 @@ function __compile_options_with_updated_sync(compile_options::CompileOptions, sy
         compile_options.raise_first,
         compile_options.legalize_chlo_to_stablehlo,
         compile_options.cudnn_hlo_optimize,
+        compile_options.comm_options,
         compile_options.shardy_passes,
         compile_options.optimize_then_pad,
         compile_options.optimize_communications,
@@ -456,6 +505,8 @@ function __compile_options_with_updated_sync(compile_options::CompileOptions, sy
         compile_options.xla_debug_options,
         compile_options.disable_scatter_gather_optimization_passes,
         compile_options.disable_pad_optimization_passes,
+        compile_options.disable_dot_formation_passes,
+        compile_options.max_reused_const_prop_size,
         compile_options.disable_licm_optimization_passes,
         compile_options.loop_unswitch_threshold,
         compile_options.excluded_passes,

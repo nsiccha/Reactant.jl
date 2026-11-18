@@ -28,7 +28,7 @@ if !Reactant.Accelerators.TPU.has_tpu()
         A = Reactant.to_rarray(ones(100, 100))
         out = Reactant.to_rarray(ones(100, 100))
         platform_name = Reactant.XLA.platform_name(Reactant.XLA.default_backend())
-        raise = platform_name ∉ ("cpu", "cuda")
+        raise = platform_name ∉ ("cpu", "cuda", "rocm")
         @jit raise = raise matmul!(out, A)
         out_c = Array(out)
         A_c = Array(A)
@@ -70,7 +70,7 @@ end
     x = Reactant.to_rarray(collect(1:1:64) ./ 64)
 
     platform_name = Reactant.XLA.platform_name(Reactant.XLA.default_backend())
-    raise = platform_name ∉ ("cpu", "cuda")
+    raise = platform_name ∉ ("cpu", "cuda", "rocm")
 
     b = get_backend(x)
     @test b isa Base.get_extension(Reactant, :ReactantKernelAbstractionsExt).ReactantBackend
@@ -123,9 +123,8 @@ end
 
     ir = repr(Reactant.@code_hlo raise = true run_fma!(out, a, b, c))
     @test @filecheck begin
-        @check "%0 = stablehlo.multiply %arg1, %arg2 : tensor<4xf64>"
-        @check_next "%1 = stablehlo.add %0, %arg3 : tensor<4xf64>"
-        @check_next "return %1 : tensor<4xf64>"
+        @check "%0 = stablehlo.fma %arg1, %arg2, %arg3 : tensor<4xf64>"
+        @check_next "return %0 : tensor<4xf64>"
         ir
     end
 end
@@ -171,6 +170,27 @@ end
 
     @test Array(Reactant.@jit raise = true concrete_double(x)) ≈ 2 .* Array(x)
     @test Array(Reactant.@jit raise = true traced_double(x)) ≈ 2 .* Array(x)
+end
+
+@kernel function scale!(y, x, α)
+    I = @index(Global, Cartesian)
+    @inbounds y[I] = α * x[I]
+end
+
+function f(x, y, n)
+    @trace for _ in 1:n
+        scale!(get_backend(y))(y, x, 2.0; ndrange=size(y))   # y = 2x, x untouched
+    end
+    return sum(y)          # any reduction of the array the kernel wrote
+end
+
+@testset "XLA Relayouting" begin
+    x = Reactant.to_rarray(randn(16, 3))
+    y = Reactant.to_rarray(zeros(16, 3))
+    n = Reactant.to_rarray(5; track_numbers=true)
+    @jit f(x, y, n)
+
+    @test Array(y) ≈ 2 .* Array(x)
 end
 
 # A raised kernel reads and writes a complex number as its two fields.
@@ -244,5 +264,58 @@ end
         vals = Reactant.to_rarray([0.2, 0.7])
         @jit raise = true launch_elementwise!(unsigned_branch_kernel!, out, vals)
         @test Array(out) == T[1, 2]
+    end
+end
+
+# A type passed as a kernel argument is a constant, which the kernel is compiled for and
+# which is not passed at run time; the argument after it must still reach the kernel.
+@kernel function fill_typed_kernel!(y, FT, x)
+    i = @index(Global)
+    @inbounds y[i] = convert(FT, 2) * x[i]
+end
+
+function launch_typed!(y, FT, x)
+    fill_typed_kernel!(KernelAbstractions.get_backend(y))(y, FT, x; ndrange=length(y))
+    return nothing
+end
+
+@testset "KernelAbstractions type argument (raised)" begin
+    x = Float32[1, 2, 3]
+    y_cpu = zeros(Float32, 3)
+    launch_typed!(y_cpu, Float32, x)
+
+    y = Reactant.to_rarray(zeros(Float32, 3))
+    @jit raise = true launch_typed!(y, Float32, Reactant.to_rarray(x))
+    @test Array(y) == y_cpu
+end
+
+# A raised kernel clamps traced numbers. Inside a kernel `convert` to the kernel's traced
+# number type returns a pointer to the value, which `clamp` has to load rather than return.
+@kernel function clamp_kernel!(out, @Const(x), s, ::Val{form}) where {form}
+    i = @index(Global)
+    T = typeof(s)
+    xᵢ = @inbounds x[i]
+    @inbounds out[i] = if form === :all_traced
+        clamp(convert(T, xᵢ), convert(T, 2), convert(T, 5))
+    elseif form === :traced_value
+        clamp(convert(T, xᵢ), 2, 5)
+    else
+        clamp(xᵢ, convert(T, 2), convert(T, 5))
+    end
+end
+
+function launch_clamp!(out, x, s, form)
+    backend = KernelAbstractions.get_backend(out)
+    clamp_kernel!(backend)(out, x, s, form; ndrange=length(out))
+    return nothing
+end
+
+@testset "KernelAbstractions clamp of traced numbers (raised)" begin
+    x = Float32[0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]
+    s = Reactant.to_rarray(1.0f0; track_numbers=true)
+    @testset "$form" for form in (:all_traced, :traced_value, :traced_bounds)
+        out = Reactant.to_rarray(zeros(Float32, 8))
+        @jit raise = true launch_clamp!(out, Reactant.to_rarray(x), s, Val(form))
+        @test Array(out) == clamp.(x, 2, 5)
     end
 end

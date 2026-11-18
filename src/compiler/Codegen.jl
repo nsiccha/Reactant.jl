@@ -16,6 +16,21 @@ const DEBUG_DISABLE_RESHARDING = Ref(false)
 const DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR = Ref(false)
 const DEBUG_BUFFER_POINTERS_STORE_DICT = Base.IdDict()
 
+function check_aliased_buffer_assignment(
+    @nospecialize(obj), field, val, path; buffer_field=:data
+)
+    if DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR[] && field == buffer_field
+        if val ∈ keys(DEBUG_BUFFER_POINTERS_STORE_DICT)
+            if obj !== DEBUG_BUFFER_POINTERS_STORE_DICT[val]
+                error("Aliased buffer cannot be assigned to multiple Concrete Structs. \
+                       Path: $path.")
+            end
+        else
+            DEBUG_BUFFER_POINTERS_STORE_DICT[val] = obj
+        end
+    end
+end
+
 @inline function traced_getfield(@nospecialize(obj::Dict), field)
     return Base.getindex(obj, field)
 end
@@ -64,17 +79,7 @@ end
 @inline function traced_setfield!(
     @nospecialize(obj::AbstractConcreteNumber), field, val, path
 )
-    if DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR[] && field == :data
-        if val ∈ keys(DEBUG_BUFFER_POINTERS_STORE_DICT)
-            if obj !== DEBUG_BUFFER_POINTERS_STORE_DICT[val]
-                error("Aliased buffer cannot be assigned to multiple Concrete Structs. \
-                       Path: $path.")
-            end
-        else
-            DEBUG_BUFFER_POINTERS_STORE_DICT[val] = obj
-        end
-    end
-
+    check_aliased_buffer_assignment(obj, field, val, path)
     return Base.setproperty!(obj, field, val)
 end
 
@@ -105,31 +110,12 @@ end
 
 # fallback
 @inline function setfield_carray!(obj, field, val, path)
-    if DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR[] && field == :data
-        if val ∈ keys(DEBUG_BUFFER_POINTERS_STORE_DICT)
-            if obj !== DEBUG_BUFFER_POINTERS_STORE_DICT[val]
-                error("Aliased buffer cannot be assigned to multiple Concrete Structs. \
-                       Path: $path.")
-            end
-        else
-            DEBUG_BUFFER_POINTERS_STORE_DICT[val] = obj
-        end
-    end
-
+    check_aliased_buffer_assignment(obj, field, val, path)
     return Base.setproperty!(obj, field, val)
 end
 
 @inline function setfield_carray!(obj::ConcretePJRTArray, field, val, path)
-    if DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR[] && field == :data
-        if val ∈ keys(DEBUG_BUFFER_POINTERS_STORE_DICT)
-            if obj !== DEBUG_BUFFER_POINTERS_STORE_DICT[val]
-                error("Aliased buffer cannot be assigned to multiple Concrete Structs. \
-                       Path: $path.")
-            end
-        else
-            DEBUG_BUFFER_POINTERS_STORE_DICT[val] = obj
-        end
-    end
+    check_aliased_buffer_assignment(obj, field, val, path)
 
     if field !== :data || typeof(val) == typeof(getfield(obj, field))
         return Base.setproperty!(obj, field, val)
@@ -711,7 +697,7 @@ function create_result(
 end
 
 function create_result(
-    tocopy::Reactant.XLA.AbstractDevice,
+    tocopy::Union{Reactant.XLA.AbstractClient,Reactant.XLA.AbstractDevice},
     @nospecialize(_path::Tuple),
     _result_stores,
     _path_to_shard_info,
@@ -857,7 +843,7 @@ function codegen_flatten!(
                         push!(flatten_names, sbuf)
                         push!(
                             flatten_code,
-                            :($sbuf = XLA.synced_buffer(getindex($usbuf, $(j)))),
+                            :($sbuf = XLA.unsynced_buffer(getindex($usbuf, $(j)))),
                         )
                     end
                 else
@@ -932,7 +918,7 @@ function codegen_flatten!(
                 sbuf = Symbol(:sbuf_, i)
                 push!(flatten_names, sbuf)
                 if arg isa TracedRArray || arg isa TracedRNumber
-                    push!(flatten_code, :($sbuf = only(XLA.synced_buffer($usbuf))))
+                    push!(flatten_code, :($sbuf = only(XLA.unsynced_buffer($usbuf))))
                 else
                     error("Unsupported type $(typeof(arg))")
                 end
@@ -964,7 +950,7 @@ function codegen_flatten!(
                         size(carg),
                     )
 
-                    push!(flatten_code, :($sbuf = XLA.synced_buffer($usbuf)))
+                    push!(flatten_code, :($sbuf = XLA.unsynced_buffer($usbuf)))
                 else
                     if DEBUG_DISABLE_RESHARDING[]
                         error("Resharding is disabled. Problematic input:\ntypeof: \
@@ -1008,7 +994,7 @@ function codegen_flatten!(
                     )
                 end
             else
-                push!(flatten_code, :($sbuf = XLA.synced_buffer($usbuf)))
+                push!(flatten_code, :($sbuf = XLA.unsynced_buffer($usbuf)))
             end
             # Important to mark donated after we have extracted the data
             push!(
@@ -1038,7 +1024,7 @@ function donate_argument!(
     path,
 )
     if donated_args_mask[i]
-        buffers = Tuple(d.buffer for d in carg.data)
+        buffers = map(Base.Fix2(getfield, :buffer), carg.data)
         if buffers in donated_buffers
             error("Donated buffer $(carg.data) is already marked as donated. Can't donate \
                    the same buffer multiple times. The argument is present at $(path)")
@@ -1080,6 +1066,43 @@ function ifrt_resharded_buffer(
     return XLA.IFRT.Array(client, data, ifrt_sharding)
 end
 
+const UNRESOLVED_PATH = gensym(:unresolved_path)
+
+# Follow `path` (indices into `args` and then fields, as in the generated `traced_getfield`
+# chains) through the compile-time `concrete_args`, returning the object found there, or
+# `UNRESOLVED_PATH` if it cannot be followed.
+function resolve_path(concrete_args, path)
+    concrete_args === nothing && return UNRESOLVED_PATH
+    try
+        obj = concrete_args[path[1]]
+        for p in path[2:end]
+            obj = traced_getfield(obj, p)
+        end
+        return obj
+    catch
+        return UNRESOLVED_PATH
+    end
+end
+
+# Whether the write-back to the object at `path` (resolved through the compile-time
+# `concrete_args`) with `key` has already been emitted. The same object is often reachable
+# through many argument paths (e.g. a mutable array shared by many immutable wrappers);
+# writing the same value to it through every path is redundant and, since the thunk body is
+# a single straight-line function, makes its native code generation superlinearly slower.
+# The thunk already assumes the aliasing seen at compile time, as aliased inputs are
+# flattened only once.
+function is_redundant_write!(written, concrete_args, path, key)
+    obj = resolve_path(concrete_args, path)
+    obj === UNRESOLVED_PATH && return false
+    # compare by identity: `isequal` on arrays would compare (and fetch) their contents
+    entry = (obj, key)
+    entry in written && return true
+    push!(written, entry)
+    return false
+end
+
+new_written_set() = Base.IdSet{Any}()
+
 """
     codegen_unflatten!
 
@@ -1096,7 +1119,8 @@ function codegen_unflatten!(
     path_to_shard_info,
     linear_result_shard_info,
     client,
-    resharded_inputs,
+    resharded_inputs;
+    concrete_args=nothing,
 )
     cache_dict = Symbol("cache_dict")
     needs_cache_dict = false
@@ -1118,6 +1142,7 @@ function codegen_unflatten!(
     ctypes = Union{arrtype,numtype}
 
     to_unreshard_results = Dict{Tuple,Any}()
+    written = new_written_set()
 
     # Ofcourse not thread-safe but this isn't meant for end-users anyways
     if DEBUG_ALIASED_BUFFER_ASSIGNMENT_ERROR[]
@@ -1165,7 +1190,16 @@ function codegen_unflatten!(
                                                     instead."
                 end
 
+                argidx = path[2]
                 path = path[3:end]
+                if length(path) > 0 && is_redundant_write!(
+                    written,
+                    concrete_args,
+                    (argidx, path[1:max(0, end - 2)]...),
+                    (path[max(1, end - 1):end]..., concrete_res_name),
+                )
+                    continue
+                end
                 for p in path[1:max(0, end - 2)]
                     unflatcode = :(traced_getfield($unflatcode, $(Meta.quot(p))))
                 end
@@ -1328,7 +1362,9 @@ function codegen_unflatten!(
         linear_args,
         resharded_inputs,
         orig_buffer_available,
-        runtime,
+        runtime;
+        concrete_args,
+        written,
     )
 
     # generate return object which stores the concrete results in some arbitrary way
@@ -1357,7 +1393,9 @@ function codegen_unflatten_aliased_args!(
     linear_args,
     resharded_inputs,
     orig_buffer_available,
-    runtime,
+    runtime;
+    concrete_args=nothing,
+    written=new_written_set(),
 )
     for (pi, (result, arg_idx)) in enumerate(preserved_args)
         paths = (
@@ -1395,6 +1433,9 @@ function codegen_unflatten_aliased_args!(
             # `:resargs` path can resolve to the same argument slot. Write it only once.
             path[2:end] in seen_dsts && continue
             push!(seen_dsts, path[2:end])
+            # Another path to the same object already received this value.
+            is_redundant_write!(written, concrete_args, path[2:end], (:data, pi)) &&
+                continue
 
             res = :(args[$(path[2])])
 

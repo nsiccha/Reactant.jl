@@ -66,3 +66,37 @@ end
     oc_res = onecold(res)
     @test @jit(onecold(dense_ra)) == oc_res
 end
+
+flat_mul(W, x) = W * reshape(x, size(x, 1), :)
+
+@testset "matmul with a reshaped $(length(dims) + 1)-d array" for dims in ((15,), (3, 5))
+    m = onehotbatch(rand(1:10, dims...), 1:10)
+    r_m = Reactant.to_rarray(m)
+    W = Reactant.TestUtils.construct_test_array(Float32, 4, 10)
+    r_W = Reactant.to_rarray(W)
+    r_res = Reactant.with_config(; dot_general_precision=PrecisionConfig.HIGHEST) do
+        @jit flat_mul(r_W, r_m)
+    end
+    @test r_res ≈ flat_mul(W, m)
+end
+
+@testset "show/print_array without scalar indexing" begin
+    ext = Base.get_extension(Reactant, :ReactantOneHotArraysExt)
+    oh_cpu = onehotbatch([1, 3, 2, 1], 1:3)
+    oh_r = Reactant.to_rarray(oh_cpu)
+
+    @test which(Base.print_array, Tuple{IOBuffer,typeof(oh_r)}).module === ext
+    @test which(Base.show, Tuple{IOBuffer,typeof(oh_r)}).module === ext
+
+    task_local_storage(:ScalarIndexing, Reactant.GPUArraysCore.ScalarDisallowed) do
+        @test occursin("⋅", sprint(show, MIME"text/plain"(), oh_r))
+        @test sprint(show, oh_r) == sprint(show, oh_cpu)
+        @test sprint(show, MIME"text/plain"(), oh_r') isa String
+        @test sprint(show, MIME"text/plain"(), transpose(oh_r)) isa String
+        @test sprint(show, MIME"text/plain"(), reshape(oh_r, 3, 2, 2)) isa String
+
+        oh_view = OneHotArray(@view(oh_r.indices[1:2]), 3)
+        @test Array(oh_view) == Array(oh_cpu)[:, 1:2]
+        @test sprint(show, MIME"text/plain"(), oh_view) isa String
+    end
+end

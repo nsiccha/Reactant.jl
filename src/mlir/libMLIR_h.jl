@@ -606,6 +606,39 @@ function mlirContextGetThreadPool(context)
 end
 
 """
+    mlirContextBeginTransientScope(context)
+
+Begins a transient scope on the context, freezing the base layer (loaded dialects, registered operations, interface models, and existing types/attributes). Precondition: The context must not already be in a transient scope.
+"""
+function mlirContextBeginTransientScope(context)
+    @ccall Reactant_jll.libReactantExtra.mlirContextBeginTransientScope(
+        context::MlirContext
+    )::Cvoid
+end
+
+"""
+    mlirContextEndTransientScope(context)
+
+Ends the transient scope and resets the context to the base state, pruning transient types, attributes, affine expressions, distinct attributes, and unregistered operations added during the transient scope.
+"""
+function mlirContextEndTransientScope(context)
+    @ccall Reactant_jll.libReactantExtra.mlirContextEndTransientScope(
+        context::MlirContext
+    )::Cvoid
+end
+
+"""
+    mlirContextIsInTransientScope(context)
+
+Returns whether the context is currently in a transient scope.
+"""
+function mlirContextIsInTransientScope(context)
+    @ccall Reactant_jll.libReactantExtra.mlirContextIsInTransientScope(
+        context::MlirContext
+    )::Bool
+end
+
+"""
     mlirDialectGetContext(dialect)
 
 Returns the context that owns the dialect.
@@ -1658,6 +1691,28 @@ function mlirOperationGetParentOperation(op)
     @ccall Reactant_jll.libReactantExtra.mlirOperationGetParentOperation(
         op::MlirOperation
     )::MlirOperation
+end
+
+"""
+    mlirOperationIsAncestor(a, b)
+
+Returns true if `a` is an ancestor of `b`, i.e. `a` contains `b` or `a == b`.
+"""
+function mlirOperationIsAncestor(a, b)
+    @ccall Reactant_jll.libReactantExtra.mlirOperationIsAncestor(
+        a::MlirOperation, b::MlirOperation
+    )::Bool
+end
+
+"""
+    mlirOperationIsProperAncestor(a, b)
+
+Returns true if `a` is a proper ancestor of `b`, i.e. `a` contains `b` but `a != b`.
+"""
+function mlirOperationIsProperAncestor(a, b)
+    @ccall Reactant_jll.libReactantExtra.mlirOperationIsProperAncestor(
+        a::MlirOperation, b::MlirOperation
+    )::Bool
 end
 
 """
@@ -7561,6 +7616,28 @@ function mlirEmitError(location, message)
     )::Cvoid
 end
 
+"""
+    mlirEmitWarning(location, message)
+
+Emits a warning at the given location through the diagnostics engine. Used for testing purposes.
+"""
+function mlirEmitWarning(location, message)
+    @ccall Reactant_jll.libReactantExtra.mlirEmitWarning(
+        location::MlirLocation, message::Cstring
+    )::Cvoid
+end
+
+"""
+    mlirEmitRemark(location, message)
+
+Emits a remark at the given location through the diagnostics engine. Used for testing purposes.
+"""
+function mlirEmitRemark(location, message)
+    @ccall Reactant_jll.libReactantExtra.mlirEmitRemark(
+        location::MlirLocation, message::Cstring
+    )::Cvoid
+end
+
 function mlirGetDialectHandle__amdgpu__()
     @ccall Reactant_jll.libReactantExtra.mlirGetDialectHandle__amdgpu__()::MlirDialectHandle
 end
@@ -8416,6 +8493,7 @@ end
     MlirLLVMCConvTail = 0x0000000000000012
     MlirLLVMCConvCFGuard_Check = 0x0000000000000013
     MlirLLVMCConvSwiftTail = 0x0000000000000014
+    MlirLLVMCConvPreserveNone = 0x0000000000000015
     MlirLLVMCConvX86_StdCall = 0x0000000000000040
     MlirLLVMCConvX86_FastCall = 0x0000000000000041
     MlirLLVMCConvARM_APCS = 0x0000000000000042
@@ -8723,6 +8801,7 @@ function mlirLLVMDIStringTypeAttrGet(
     stringLengthExp,
     stringLocationExp,
     encoding,
+    charType,
 )
     @ccall Reactant_jll.libReactantExtra.mlirLLVMDIStringTypeAttrGet(
         ctx::MlirContext,
@@ -8734,6 +8813,7 @@ function mlirLLVMDIStringTypeAttrGet(
         stringLengthExp::MlirAttribute,
         stringLocationExp::MlirAttribute,
         encoding::MlirLLVMTypeEncoding,
+        charType::MlirAttribute,
     )::MlirAttribute
 end
 
@@ -8859,6 +8939,49 @@ function mlirLLVMDICompileUnitAttrGetWithSourceLanguageDialect(
         isRecSelf::Bool,
         id::MlirAttribute,
         sourceLanguage::Cuint,
+        sourceLanguageDialect::Cuint,
+        file::MlirAttribute,
+        producer::MlirAttribute,
+        isOptimized::Bool,
+        emissionKind::MlirLLVMDIEmissionKind,
+        isDebugInfoForProfiling::Bool,
+        nameTableKind::MlirLLVMDINameTableKind,
+        splitDebugFilename::MlirAttribute,
+        nImportedEntities::Cptrdiff_t,
+        importedEntities::Ptr{MlirAttribute},
+    )::MlirAttribute
+end
+
+"""
+    mlirLLVMDICompileUnitAttrGetWithSourceLanguageName(ctx, recId, isRecSelf, id, sourceLanguageName, sourceLanguageVersion, sourceLanguageDialect, file, producer, isOptimized, emissionKind, isDebugInfoForProfiling, nameTableKind, splitDebugFilename, nImportedEntities, importedEntities)
+
+Creates an LLVM DICompileUnit attribute with a DWARF v6 source language name, version, and optional source language dialect.
+"""
+function mlirLLVMDICompileUnitAttrGetWithSourceLanguageName(
+    ctx,
+    recId,
+    isRecSelf,
+    id,
+    sourceLanguageName,
+    sourceLanguageVersion,
+    sourceLanguageDialect,
+    file,
+    producer,
+    isOptimized,
+    emissionKind,
+    isDebugInfoForProfiling,
+    nameTableKind,
+    splitDebugFilename,
+    nImportedEntities,
+    importedEntities,
+)
+    @ccall Reactant_jll.libReactantExtra.mlirLLVMDICompileUnitAttrGetWithSourceLanguageName(
+        ctx::MlirContext,
+        recId::MlirAttribute,
+        isRecSelf::Bool,
+        id::MlirAttribute,
+        sourceLanguageName::Cuint,
+        sourceLanguageVersion::UInt32,
         sourceLanguageDialect::Cuint,
         file::MlirAttribute,
         producer::MlirAttribute,
@@ -11634,6 +11757,21 @@ function mlirIRRewriterDestroy(rewriter)
 end
 
 """
+    mlirDialectMaterializeConstant(dialect, rewriter, value, type, loc)
+
+Materializes a constant for the given attribute `value` and `type` using the dialect's `materializeConstant` hook. The operation is created with the given rewriter (used as an OpBuilder) at its current insertion point, without changing that insertion point. Returns a null operation if the dialect does not support materializing the given constant.
+"""
+function mlirDialectMaterializeConstant(dialect, rewriter, value, type, loc)
+    @ccall Reactant_jll.libReactantExtra.mlirDialectMaterializeConstant(
+        dialect::MlirDialect,
+        rewriter::MlirRewriterBase,
+        value::MlirAttribute,
+        type::MlirType,
+        loc::MlirLocation,
+    )::MlirOperation
+end
+
+"""
     mlirFreezeRewritePattern(set)
 
 Freeze the given [`MlirRewritePatternSet`](@ref) to a [`MlirFrozenRewritePatternSet`](@ref). Note that the ownership of the input set is transferred into the frozen set after this call.
@@ -13368,6 +13506,24 @@ function mlirDynamicOpTraitNoTerminatorGetTypeID()
 end
 
 """
+    mlirDynamicOpTraitRecursiveMemoryEffectsCreate()
+
+Get the dynamic op trait that indicates memory effects of an operation includes the effects of operations nested within its regions.
+"""
+function mlirDynamicOpTraitRecursiveMemoryEffectsCreate()
+    @ccall Reactant_jll.libReactantExtra.mlirDynamicOpTraitRecursiveMemoryEffectsCreate()::MlirDynamicOpTrait
+end
+
+"""
+    mlirDynamicOpTraitRecursiveMemoryEffectsGetTypeID()
+
+Get the type ID of the dynamic op trait that indicates memory effects of an operation includes the effects of operations nested within its regions.
+"""
+function mlirDynamicOpTraitRecursiveMemoryEffectsGetTypeID()
+    @ccall Reactant_jll.libReactantExtra.mlirDynamicOpTraitRecursiveMemoryEffectsGetTypeID()::MlirTypeID
+end
+
+"""
     mlirDynamicOpTraitDestroy(dynamicOpTrait)
 
 Destroy the dynamic op trait.
@@ -13938,6 +14094,292 @@ Register all compiler passes of MLIR.
 """
 function mlirRegisterAllPasses()
     @ccall Reactant_jll.libReactantExtra.mlirRegisterAllPasses()::Cvoid
+end
+
+"""
+    MlirRemark
+
+An opaque reference to a remark. A remark is only valid for the duration of the callback it is passed to; it must not be stored.
+"""
+struct MlirRemark
+    ptr::Ptr{Cvoid}
+end
+
+"""
+    MlirRemarkKind
+
+The outcome a remark describes (see mlir::remark::RemarkKind).
+"""
+@cenum MlirRemarkKind::UInt32 begin
+    MlirRemarkKindUnknown = 0x0000000000000000
+    MlirRemarkKindPassed = 0x0000000000000001
+    MlirRemarkKindMissed = 0x0000000000000002
+    MlirRemarkKindFailure = 0x0000000000000003
+    MlirRemarkKindAnalysis = 0x0000000000000004
+end
+
+"""
+    MlirRemarkPolicy
+
+The emitting policy of the remark engine.
+"""
+@cenum MlirRemarkPolicy::UInt32 begin
+    MlirRemarkPolicyAll = 0x0000000000000000
+    MlirRemarkPolicyFinal = 0x0000000000000001
+end
+
+"""
+    MlirRemarkFileFormat
+
+The serialization format of a remark output file.
+"""
+@cenum MlirRemarkFileFormat::UInt32 begin
+    MlirRemarkFileFormatYAML = 0x0000000000000000
+    MlirRemarkFileFormatBitstream = 0x0000000000000001
+end
+
+"""
+    MlirRemarkCategories
+
+Regular expressions (llvm::Regex syntax, anchored by the engine) selecting the remark categories to report: `all` applies to every kind, the others to one kind each. A string of length 0 means the filter is not set, so the corresponding kind is not reported unless `all` matches.
+"""
+struct MlirRemarkCategories
+    all::MlirStringRef
+    passed::MlirStringRef
+    missed::MlirStringRef
+    analysis::MlirStringRef
+    failed::MlirStringRef
+end
+
+# typedef void ( * MlirRemarkCallback ) ( MlirRemark remark , void * userData )
+"""
+Callback receiving every remark the engine reports.
+"""
+const MlirRemarkCallback = Ptr{Cvoid}
+
+"""
+    mlirContextEnableOptimizationRemarks(context, categories, policy, printAsEmitRemarks)
+
+Enables the remark engine on the context without a streamer; when `printAsEmitRemarks` is set, every reported remark is emitted as an MLIR remark diagnostic at its location. Fails when the context already has a remark engine (finalize it first).
+"""
+function mlirContextEnableOptimizationRemarks(
+    context, categories, policy, printAsEmitRemarks
+)
+    @ccall Reactant_jll.libReactantExtra.mlirContextEnableOptimizationRemarks(
+        context::MlirContext,
+        categories::MlirRemarkCategories,
+        policy::MlirRemarkPolicy,
+        printAsEmitRemarks::Bool,
+    )::MlirLogicalResult
+end
+
+"""
+    mlirContextEnableOptimizationRemarksToFile(context, categories, policy, format, path, printAsEmitRemarks)
+
+Enables the remark engine on the context, streaming the reported remarks to the file at `path` in `format`. The file is written when the engine is finalized. Fails when the file cannot be created or the context already has a remark engine.
+"""
+function mlirContextEnableOptimizationRemarksToFile(
+    context, categories, policy, format, path, printAsEmitRemarks
+)
+    @ccall Reactant_jll.libReactantExtra.mlirContextEnableOptimizationRemarksToFile(
+        context::MlirContext,
+        categories::MlirRemarkCategories,
+        policy::MlirRemarkPolicy,
+        format::MlirRemarkFileFormat,
+        path::MlirStringRef,
+        printAsEmitRemarks::Bool,
+    )::MlirLogicalResult
+end
+
+"""
+    mlirContextEnableOptimizationRemarksWithCallback(context, categories, policy, callback, userData, deleteUserData, printAsEmitRemarks)
+
+Enables the remark engine on the context, delivering every reported remark to `callback`. `userData` is passed to the callback unchanged and released through `deleteUserData` (may be null) when the engine is finalized or the context is destroyed. Fails when the context already has a remark engine.
+"""
+function mlirContextEnableOptimizationRemarksWithCallback(
+    context, categories, policy, callback, userData, deleteUserData, printAsEmitRemarks
+)
+    @ccall Reactant_jll.libReactantExtra.mlirContextEnableOptimizationRemarksWithCallback(
+        context::MlirContext,
+        categories::MlirRemarkCategories,
+        policy::MlirRemarkPolicy,
+        callback::MlirRemarkCallback,
+        userData::Ptr{Cvoid},
+        deleteUserData::Ptr{Cvoid},
+        printAsEmitRemarks::Bool,
+    )::MlirLogicalResult
+end
+
+"""
+    mlirContextFinalizeOptimizationRemarks(context)
+
+Finalizes and removes the remark engine of the context: postponed remarks are reported, the output file is written and the callback's user data is released. Does nothing when no engine is enabled.
+"""
+function mlirContextFinalizeOptimizationRemarks(context)
+    @ccall Reactant_jll.libReactantExtra.mlirContextFinalizeOptimizationRemarks(
+        context::MlirContext
+    )::Cvoid
+end
+
+"""
+    mlirContextHasRemarkEngine(context)
+
+Returns whether the context has a remark engine enabled.
+"""
+function mlirContextHasRemarkEngine(context)
+    @ccall Reactant_jll.libReactantExtra.mlirContextHasRemarkEngine(
+        context::MlirContext
+    )::Bool
+end
+
+"""
+    mlirRemarkGetKind(remark)
+
+Returns the kind of the remark.
+"""
+function mlirRemarkGetKind(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetKind(
+        remark::MlirRemark
+    )::MlirRemarkKind
+end
+
+"""
+    mlirRemarkGetRemarkName(remark)
+
+Returns the name identifying the remark.
+"""
+function mlirRemarkGetRemarkName(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetRemarkName(
+        remark::MlirRemark
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkGetCategoryName(remark)
+
+Returns the category of the remark (the subject of the filters).
+"""
+function mlirRemarkGetCategoryName(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetCategoryName(
+        remark::MlirRemark
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkGetFullCategoryName(remark)
+
+Returns the combined `category:subcategory` name of the remark.
+"""
+function mlirRemarkGetFullCategoryName(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetFullCategoryName(
+        remark::MlirRemark
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkGetFunctionName(remark)
+
+Returns the name of the function the remark refers to.
+"""
+function mlirRemarkGetFunctionName(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetFunctionName(
+        remark::MlirRemark
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkGetLocation(remark)
+
+Returns the location of the remark.
+"""
+function mlirRemarkGetLocation(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetLocation(
+        remark::MlirRemark
+    )::MlirLocation
+end
+
+"""
+    mlirRemarkGetId(remark)
+
+Returns the unique id of the remark within its engine (0 when unset).
+"""
+function mlirRemarkGetId(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetId(remark::MlirRemark)::UInt64
+end
+
+"""
+    mlirRemarkGetNumArgs(remark)
+
+Returns the number of key/value arguments attached to the remark.
+"""
+function mlirRemarkGetNumArgs(remark)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetNumArgs(
+        remark::MlirRemark
+    )::Cptrdiff_t
+end
+
+"""
+    mlirRemarkGetArgKey(remark, pos)
+
+Returns the key of the `pos`-th argument of the remark.
+"""
+function mlirRemarkGetArgKey(remark, pos)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetArgKey(
+        remark::MlirRemark, pos::Cptrdiff_t
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkGetArgValue(remark, pos)
+
+Returns the value of the `pos`-th argument of the remark.
+"""
+function mlirRemarkGetArgValue(remark, pos)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkGetArgValue(
+        remark::MlirRemark, pos::Cptrdiff_t
+    )::MlirStringRef
+end
+
+"""
+    mlirRemarkPrint(remark, callback, userData)
+
+Prints the remark in its textual form, `[Kind] name | Category:... | Function=... | key=value, ...` (without its location).
+"""
+function mlirRemarkPrint(remark, callback, userData)
+    @ccall Reactant_jll.libReactantExtra.mlirRemarkPrint(
+        remark::MlirRemark, callback::MlirStringCallback, userData::Ptr{Cvoid}
+    )::Cvoid
+end
+
+"""
+    mlirEmitOptimizationRemark(location, kind, remarkName, categoryName, subCategoryName, functionName, message, numArgs, argKeys, argValues)
+
+Emits a remark of `kind` at `location` through the remark engine of the location's context. `message` (when non-empty) and the `numArgs` key/value pairs become the arguments of the remark. Returns false, emitting nothing, when the context has no remark engine, the category is filtered out, or `kind` is MlirRemarkKindUnknown.
+"""
+function mlirEmitOptimizationRemark(
+    location,
+    kind,
+    remarkName,
+    categoryName,
+    subCategoryName,
+    functionName,
+    message,
+    numArgs,
+    argKeys,
+    argValues,
+)
+    @ccall Reactant_jll.libReactantExtra.mlirEmitOptimizationRemark(
+        location::MlirLocation,
+        kind::MlirRemarkKind,
+        remarkName::MlirStringRef,
+        categoryName::MlirStringRef,
+        subCategoryName::MlirStringRef,
+        functionName::MlirStringRef,
+        message::MlirStringRef,
+        numArgs::Cptrdiff_t,
+        argKeys::Ptr{MlirStringRef},
+        argValues::Ptr{MlirStringRef},
+    )::Bool
 end
 
 """
@@ -15904,6 +16346,26 @@ function enzymexlaCommMpiOpAttrGet(ctx, op)
     )::MlirAttribute
 end
 
+function enzymexlaCommNcclCommTypeGet(ctx)
+    @ccall Reactant_jll.libReactantExtra.enzymexlaCommNcclCommTypeGet(
+        ctx::MlirContext
+    )::MlirType
+end
+
+@cenum EnzymeXlaCommNcclRedOp::UInt32 begin
+    ENZYMEXLA_COMM_NCCL_RED_OP_SUM = 0x0000000000000000
+    ENZYMEXLA_COMM_NCCL_RED_OP_PROD = 0x0000000000000001
+    ENZYMEXLA_COMM_NCCL_RED_OP_MAX = 0x0000000000000002
+    ENZYMEXLA_COMM_NCCL_RED_OP_MIN = 0x0000000000000003
+    ENZYMEXLA_COMM_NCCL_RED_OP_AVG = 0x0000000000000004
+end
+
+function enzymexlaCommNcclRedOpAttrGet(ctx, op)
+    @ccall Reactant_jll.libReactantExtra.enzymexlaCommNcclRedOpAttrGet(
+        ctx::MlirContext, op::EnzymeXlaCommNcclRedOp
+    )::MlirAttribute
+end
+
 @cenum EnzymeXlaGuaranteedAnalysisResult::UInt32 begin
     ENZYMEXLA_GUARANTEED_ANALYSIS_RESULT_GUARANTEED = 0x0000000000000000
     ENZYMEXLA_GUARANTEED_ANALYSIS_RESULT_NOTGUARANTEED = 0x0000000000000001
@@ -15961,6 +16423,8 @@ struct EnzymeXLATransformPassesOptions
     enable_licm_optimization_passes::Bool
     loop_unswitch_threshold::Int64
     enable_pad_optimization_passes::Bool
+    enable_dot_formation_passes::Bool
+    max_reused_const_prop_size::Int64
     excluded_passes::Ptr{Cstring}
     num_excluded_passes::Csize_t
 end
@@ -16027,6 +16491,36 @@ function mlirTritonInferReduceOpEncoding(operandEncoding, axis)
     @ccall Reactant_jll.libReactantExtra.mlirTritonInferReduceOpEncoding(
         operandEncoding::MlirAttribute, axis::Cint
     )::MlirAttribute
+end
+
+function mlirGetDialectHandle__tpu__()
+    @ccall Reactant_jll.libReactantExtra.mlirGetDialectHandle__tpu__()::MlirDialectHandle
+end
+
+function mlirTPUAnalyzePotentialCommunication(op, has_communication, has_custom_barrier)
+    @ccall Reactant_jll.libReactantExtra.mlirTPUAnalyzePotentialCommunication(
+        op::MlirOperation, has_communication::Ptr{Bool}, has_custom_barrier::Ptr{Bool}
+    )::Cvoid
+end
+
+function mlirTpuRegisterMosaicSerdePass()
+    @ccall Reactant_jll.libReactantExtra.mlirTpuRegisterMosaicSerdePass()::Cvoid
+end
+
+function mlirTpuFloat8EXMYTypeGetUnderlyingType(exmy_type)
+    @ccall Reactant_jll.libReactantExtra.mlirTpuFloat8EXMYTypeGetUnderlyingType(
+        exmy_type::MlirType
+    )::MlirType
+end
+
+function mlirTpuIsAFloat8EXMYType(type)
+    @ccall Reactant_jll.libReactantExtra.mlirTpuIsAFloat8EXMYType(type::MlirType)::Bool
+end
+
+function mlirTpuFloat8EXMYTypeGet(ctx, exmy_type)
+    @ccall Reactant_jll.libReactantExtra.mlirTpuFloat8EXMYTypeGet(
+        ctx::MlirContext, exmy_type::MlirType
+    )::MlirType
 end
 
 function mlirMosaicGpuIsATileTransformAttr(attr)
@@ -16233,6 +16727,28 @@ function mlirMosaicGpuCopyPartitionedAttrGetTypeID()
     @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuCopyPartitionedAttrGetTypeID()::MlirTypeID
 end
 
+function mlirMosaicGpuIsASmemAllocAttr(attr)
+    @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuIsASmemAllocAttr(
+        attr::MlirAttribute
+    )::Bool
+end
+
+function mlirMosaicGpuSmemAllocAttrGet(ctx, alignment)
+    @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuSmemAllocAttrGet(
+        ctx::MlirContext, alignment::MlirAttribute
+    )::MlirAttribute
+end
+
+function mlirMosaicGpuSmemAllocAttrGetAlignment(attr)
+    @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuSmemAllocAttrGetAlignment(
+        attr::MlirAttribute
+    )::MlirAttribute
+end
+
+function mlirMosaicGpuSmemAllocAttrGetTypeID()
+    @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuSmemAllocAttrGetTypeID()::MlirTypeID
+end
+
 function mlirGetDialectHandle__mosaic_gpu__()
     @ccall Reactant_jll.libReactantExtra.mlirGetDialectHandle__mosaic_gpu__()::MlirDialectHandle
 end
@@ -16301,6 +16817,229 @@ end
 
 function mlirMosaicGpuP2B6TypeGetTypeID()
     @ccall Reactant_jll.libReactantExtra.mlirMosaicGpuP2B6TypeGetTypeID()::MlirTypeID
+end
+
+function mlirGetDialectHandle__enzyme__()
+    @ccall Reactant_jll.libReactantExtra.mlirGetDialectHandle__enzyme__()::MlirDialectHandle
+end
+
+"""
+    enzymeActivityAttrGet(ctx, activity)
+
+Construct an `enzyme.activity` attribute from an activity code matching the `Activity` enum ordinals (0=active, 1=dup, 2=const, 3=dupnoneed, ...).
+"""
+function enzymeActivityAttrGet(ctx, activity)
+    @ccall Reactant_jll.libReactantExtra.enzymeActivityAttrGet(
+        ctx::MlirContext, activity::UInt32
+    )::MlirAttribute
+end
+
+"""
+    enzymeRegisterPasses()
+
+Register all Enzyme MLIR passes with the global registry.
+"""
+function enzymeRegisterPasses()
+    @ccall Reactant_jll.libReactantExtra.enzymeRegisterPasses()::Cvoid
+end
+
+"""
+    enzymeRegisterDialectExtensions(registry)
+
+Register Enzyme's external model AD implementations for the core MLIR dialects (arith, func, scf, ...) into the given DialectRegistry. Must be called before appending the registry to an MLIRContext so that the Differentiate pass knows how to lower ops in those dialects.
+"""
+function enzymeRegisterDialectExtensions(registry)
+    @ccall Reactant_jll.libReactantExtra.enzymeRegisterDialectExtensions(
+        registry::MlirDialectRegistry
+    )::Cvoid
+end
+
+"""
+    enzymeCreateDifferentiatePass()
+
+Create the core differentiation pass (`--enzyme`).
+"""
+function enzymeCreateDifferentiatePass()
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateDifferentiatePass()::MlirPass
+end
+
+"""
+    enzymeCreateDifferentiatePassWithOptions(postpasses, verifyPostPasses)
+
+Create the core differentiation pass with options. postpasses: semicolon-separated list of passes to run after differentiation (may be NULL or empty). verifyPostPasses: run the verifier after each post-pass.
+"""
+function enzymeCreateDifferentiatePassWithOptions(postpasses, verifyPostPasses)
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateDifferentiatePassWithOptions(
+        postpasses::MlirStringRef, verifyPostPasses::Bool
+    )::MlirPass
+end
+
+"""
+    enzymeCreateConvertEnzymeToMemRefPass()
+
+Create the `--enzyme-ops-to-memref` pass, which lowers `enzyme.init`, `enzyme.get`, and `enzyme.set` to `memref` + `scf.if`. Required before lowering to LLVM.
+"""
+function enzymeCreateConvertEnzymeToMemRefPass()
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateConvertEnzymeToMemRefPass()::MlirPass
+end
+
+"""
+    enzymeCreateBatchPass()
+
+Create the `--enzyme-batch` pass, which lowers `enzyme.batch` ops to calls to generated `\\_*` functions.
+"""
+function enzymeCreateBatchPass()
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateBatchPass()::MlirPass
+end
+
+"""
+    enzymeCreateBatchDiffPass()
+
+Create the `--enzyme-batch-diff` pass, which differentiates batched functions produced by `--enzyme-batch`.
+"""
+function enzymeCreateBatchDiffPass()
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateBatchDiffPass()::MlirPass
+end
+
+"""
+    enzymeCreateRemoveUnusedEnzymeOpsPass()
+
+Create the `--remove-unnecessary-enzyme-ops` pass, which removes dead `enzyme.*` ops after differentiation.
+"""
+function enzymeCreateRemoveUnusedEnzymeOpsPass()
+    @ccall Reactant_jll.libReactantExtra.enzymeCreateRemoveUnusedEnzymeOpsPass()::MlirPass
+end
+
+"""
+    enzymeAutoDiffOpCreate(ctx, fn, resultTypes, nResults, inputs, nInputs, activity, nActivity, retActivity, nRetActivity, width, strongZero, loc)
+
+Construct an `enzyme.autodiff` (reverse-mode) op referencing the function named `fn`. `activity`/`retActivity` are arrays of `enzyme.activity` attributes of length `nActivity`/`nRetActivity`.
+"""
+function enzymeAutoDiffOpCreate(
+    ctx,
+    fn,
+    resultTypes,
+    nResults,
+    inputs,
+    nInputs,
+    activity,
+    nActivity,
+    retActivity,
+    nRetActivity,
+    width,
+    strongZero,
+    loc,
+)
+    @ccall Reactant_jll.libReactantExtra.enzymeAutoDiffOpCreate(
+        ctx::MlirContext,
+        fn::MlirStringRef,
+        resultTypes::Ptr{MlirType},
+        nResults::Cptrdiff_t,
+        inputs::Ptr{MlirValue},
+        nInputs::Cptrdiff_t,
+        activity::Ptr{MlirAttribute},
+        nActivity::Cptrdiff_t,
+        retActivity::Ptr{MlirAttribute},
+        nRetActivity::Cptrdiff_t,
+        width::Int64,
+        strongZero::Bool,
+        loc::MlirLocation,
+    )::MlirOperation
+end
+
+"""
+    enzymeForwardDiffOpCreate(ctx, fn, resultTypes, nResults, inputs, nInputs, activity, nActivity, retActivity, nRetActivity, width, strongZero, loc)
+
+Construct an `enzyme.fwddiff` (forward-mode) op referencing the function named `fn`. See [`enzymeAutoDiffOpCreate`](@ref) for parameter semantics.
+"""
+function enzymeForwardDiffOpCreate(
+    ctx,
+    fn,
+    resultTypes,
+    nResults,
+    inputs,
+    nInputs,
+    activity,
+    nActivity,
+    retActivity,
+    nRetActivity,
+    width,
+    strongZero,
+    loc,
+)
+    @ccall Reactant_jll.libReactantExtra.enzymeForwardDiffOpCreate(
+        ctx::MlirContext,
+        fn::MlirStringRef,
+        resultTypes::Ptr{MlirType},
+        nResults::Cptrdiff_t,
+        inputs::Ptr{MlirValue},
+        nInputs::Cptrdiff_t,
+        activity::Ptr{MlirAttribute},
+        nActivity::Cptrdiff_t,
+        retActivity::Ptr{MlirAttribute},
+        nRetActivity::Cptrdiff_t,
+        width::Int64,
+        strongZero::Bool,
+        loc::MlirLocation,
+    )::MlirOperation
+end
+
+"""
+    enzymeJacobianOpCreate(ctx, fn, resultTypes, nResults, inputs, nInputs, activity, nActivity, retActivity, nRetActivity, width, strongZero, loc)
+
+Construct an `enzyme.jacobian` op referencing the function named `fn`. See [`enzymeAutoDiffOpCreate`](@ref) for parameter semantics.
+"""
+function enzymeJacobianOpCreate(
+    ctx,
+    fn,
+    resultTypes,
+    nResults,
+    inputs,
+    nInputs,
+    activity,
+    nActivity,
+    retActivity,
+    nRetActivity,
+    width,
+    strongZero,
+    loc,
+)
+    @ccall Reactant_jll.libReactantExtra.enzymeJacobianOpCreate(
+        ctx::MlirContext,
+        fn::MlirStringRef,
+        resultTypes::Ptr{MlirType},
+        nResults::Cptrdiff_t,
+        inputs::Ptr{MlirValue},
+        nInputs::Cptrdiff_t,
+        activity::Ptr{MlirAttribute},
+        nActivity::Cptrdiff_t,
+        retActivity::Ptr{MlirAttribute},
+        nRetActivity::Cptrdiff_t,
+        width::Int64,
+        strongZero::Bool,
+        loc::MlirLocation,
+    )::MlirOperation
+end
+
+"""
+    enzymeBatchOpCreate(ctx, fn, resultTypes, nResults, inputs, nInputs, batchShape, nBatchShape, loc)
+
+Construct an `enzyme.batch` op that maps the function named `fn` over a batch of inputs. `batchShape` is an array of `nBatchShape` batch dimensions.
+"""
+function enzymeBatchOpCreate(
+    ctx, fn, resultTypes, nResults, inputs, nInputs, batchShape, nBatchShape, loc
+)
+    @ccall Reactant_jll.libReactantExtra.enzymeBatchOpCreate(
+        ctx::MlirContext,
+        fn::MlirStringRef,
+        resultTypes::Ptr{MlirType},
+        nResults::Cptrdiff_t,
+        inputs::Ptr{MlirValue},
+        nInputs::Cptrdiff_t,
+        batchShape::Ptr{Int64},
+        nBatchShape::Cptrdiff_t,
+        loc::MlirLocation,
+    )::MlirOperation
 end
 
 @cenum EnzymeRngDistribution::UInt32 begin
@@ -16549,6 +17288,12 @@ function mlirPassManagerEnableXLATraceTiming(passManager)
     )::Cvoid
 end
 
+function mlirLlvmThreadPoolCreateWithMaxThreads(maxThreads)
+    @ccall Reactant_jll.libReactantExtra.mlirLlvmThreadPoolCreateWithMaxThreads(
+        maxThreads::Cuint
+    )::MlirLlvmThreadPool
+end
+
 function mlirOperationInject(ctx, block, code, location, verify_after_parse)
     @ccall Reactant_jll.libReactantExtra.mlirOperationInject(
         ctx::MlirContext,
@@ -16607,12 +17352,6 @@ end
 
 function GetDefaultTargetTriple()
     @ccall Reactant_jll.libReactantExtra.GetDefaultTargetTriple()::Cstring
-end
-
-function enzymeActivityAttrGet(ctx, val)
-    @ccall Reactant_jll.libReactantExtra.enzymeActivityAttrGet(
-        ctx::MlirContext, val::Int32
-    )::MlirAttribute
 end
 
 function CreateProfilerSession(
@@ -16910,6 +17649,18 @@ function CudaGetStreamExecutorDeviceDescription(device_id)
     )::Ptr{DeviceDescription}
 end
 
+function ReactantRocmDeviceGetProperties(jlprops, device_id)
+    @ccall Reactant_jll.libReactantExtra.ReactantRocmDeviceGetProperties(
+        jlprops::Ptr{DeviceProperties}, device_id::Int32
+    )::Cvoid
+end
+
+function ReactantRocmDeviceGetGcnArchName(buffer, size, device_id)
+    @ccall Reactant_jll.libReactantExtra.ReactantRocmDeviceGetGcnArchName(
+        buffer::Cstring, size::Int32, device_id::Int32
+    )::Cvoid
+end
+
 function deviceDescriptionToString(device)
     @ccall Reactant_jll.libReactantExtra.deviceDescriptionToString(
         device::Ptr{DeviceDescription}
@@ -16933,6 +17684,12 @@ function ArrayFromHostBuffer(client, data, ptype, dim, cshape, device)
     )::Ptr{PjRtBuffer}
 end
 
+function BufferToHost(buffer, data)
+    @ccall Reactant_jll.libReactantExtra.BufferToHost(
+        buffer::Ptr{PjRtBuffer}, data::Ptr{Cvoid}
+    )::Cvoid
+end
+
 function CopyToBuffer(client, buffer, data, offset, size, bufferP)
     @ccall Reactant_jll.libReactantExtra.CopyToBuffer(
         client::Ptr{PjRtClient},
@@ -16941,12 +17698,6 @@ function CopyToBuffer(client, buffer, data, offset, size, bufferP)
         offset::Csize_t,
         size::Csize_t,
         bufferP::Ptr{Ptr{PjRtBuffer}},
-    )::Cvoid
-end
-
-function BufferToHost(buffer, data)
-    @ccall Reactant_jll.libReactantExtra.BufferToHost(
-        buffer::Ptr{PjRtBuffer}, data::Ptr{Cvoid}
     )::Cvoid
 end
 
@@ -17037,6 +17788,12 @@ end
 
 function FutureAwait(Future)
     @ccall Reactant_jll.libReactantExtra.FutureAwait(Future::Ptr{FutureType})::Cvoid
+end
+
+function PjRtBufferGetReadyFuture(buffer)
+    @ccall Reactant_jll.libReactantExtra.PjRtBufferGetReadyFuture(
+        buffer::Ptr{PjRtBuffer}
+    )::Ptr{FutureType}
 end
 
 function ClientCompile(
@@ -17650,6 +18407,12 @@ function ifrt_MemoryKindsAreEqual(a, b)
     @ccall Reactant_jll.libReactantExtra.ifrt_MemoryKindsAreEqual(
         a::Ptr{MemoryKind}, b::Ptr{MemoryKind}
     )::Bool
+end
+
+function free_ifrt_memory_kind(memory_kind)
+    @ccall Reactant_jll.libReactantExtra.free_ifrt_memory_kind(
+        memory_kind::Ptr{MemoryKind}
+    )::Cvoid
 end
 
 function free_op_sharding(op_sharding)
@@ -18322,6 +19085,17 @@ function reactantXLADeInit(lrt)
     )::Cvoid
 end
 
+function reactantXLAExec(lrtP, modstr, argcnt, args, constcnt, consts)
+    @ccall Reactant_jll.libReactantExtra.reactantXLAExec(
+        lrtP::Ptr{Ptr{LinkableRuntime}},
+        modstr::Cstring,
+        argcnt::Int64,
+        args::Ptr{Ptr{Cvoid}},
+        constcnt::Int64,
+        consts::Ptr{Int64},
+    )::Cvoid
+end
+
 function reactantXLAMemcpy(lrtP, dst, src, size, direction)
     @ccall Reactant_jll.libReactantExtra.reactantXLAMemcpy(
         lrtP::Ptr{Ptr{LinkableRuntime}},
@@ -18341,17 +19115,6 @@ end
 function reactantXLAFree(lrtP, buffer0)
     @ccall Reactant_jll.libReactantExtra.reactantXLAFree(
         lrtP::Ptr{Ptr{LinkableRuntime}}, buffer0::Ptr{Cvoid}
-    )::Cvoid
-end
-
-function reactantXLAExec(lrtP, modstr, argcnt, args, constcnt, consts)
-    @ccall Reactant_jll.libReactantExtra.reactantXLAExec(
-        lrtP::Ptr{Ptr{LinkableRuntime}},
-        modstr::Cstring,
-        argcnt::Int64,
-        args::Ptr{Ptr{Cvoid}},
-        constcnt::Int64,
-        consts::Ptr{Int64},
     )::Cvoid
 end
 

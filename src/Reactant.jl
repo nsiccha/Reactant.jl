@@ -161,6 +161,7 @@ aos_to_soa(x::AnyTracedRArray) = x
 
 function aos_to_soa(x::Array{TracedRNumber{T}}) where {T}
     isa_traced_soa(ancestor(x)) && return x
+    isempty(x) && return similar(TracedRArray{T}, size(x))
     for i in eachindex(x)
         if !isassigned(x, i)
             x[i] = promote_to(TracedRNumber{T}, 0)
@@ -284,7 +285,7 @@ include("ControlFlow.jl")
 include("Enums.jl")
 include("Tracing.jl")
 
-default_nccl_comm_handle(::Vararg{Nothing}) = UInt(0)
+include("integration/MPI.jl")
 
 include("compiler/Compiler.jl")
 
@@ -335,8 +336,8 @@ function register_enzymexla_dialects(ctx::MLIR.IR.Context)
 end
 
 ReactantContext(; kwargs...) = ReactantContext(registry[]; kwargs...)
-function ReactantContext(args...; kwargs...)
-    ctx = MLIR.IR.Context(args...; kwargs...)
+function ReactantContext(args...; threading::Bool=false, kwargs...)
+    ctx = MLIR.IR.Context(args...; threading, kwargs...)
     register_enzymexla_dialects(ctx)
     return ctx
 end

@@ -30,7 +30,11 @@ function run_benchmark!(
     track_numbers::Bool=false,
     skip_manual_vectorized_bench::Bool=false,
 ) where {F,GT}
-    compile_modes = [("Default", Reactant.CompileOptions())]
+    # Raised `@trace` nests usually write into their inputs, so `donated_args=:auto`
+    # aliases those inputs to outputs, while the vectorized ground truth usually
+    # returns a fresh array and aliases nothing. Disable donation so both arms
+    # are compiled under the same buffer rules.
+    compile_modes = [("Default", Reactant.CompileOptions(; donated_args=:none))]
     # NOTE: extremely slow to benchmark
     # if backend == "CPU"
     #     push!(compile_modes, ("NoOpt", Reactant.DefaultXLACompileOptions()))
@@ -93,12 +97,12 @@ function run_benchmark!(
             )
             results["Runtime (s)"][full_benchmark_name] =
                 prof_result.profiling_result.runtime_ns / 1e9
-            results["TFLOP/s"][full_benchmark_name] =
-                if prof_result.profiling_result.metrics_data === nothing
-                    -1
-                else
-                    prof_result.profiling_result.metrics_data.raw_flops_rate / 1e12
-                end
+            tflops = if prof_result.profiling_result.metrics_data === nothing
+                -1.0
+            else
+                prof_result.profiling_result.metrics_data.raw_flops_rate / 1e12
+            end
+            results["TFLOP/s"][full_benchmark_name] = isfinite(tflops) ? tflops : -1.0
 
             print_stmt = @sprintf(
                 "%100s     :     %.5gs    %.5g TFLOP/s",
