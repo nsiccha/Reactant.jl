@@ -1,0 +1,333 @@
+{
+  "schema": 1,
+  "line": {
+    "repo": "nsiccha/Reactant.jl",
+    "ref": "dogfood",
+    "sha": "24383df755ab7b1641048dfcb8d67e29fbef7097"
+  },
+  "upstream": {
+    "repo": "EnzymeAD/Reactant.jl",
+    "ref": "main",
+    "sha": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8"
+  },
+  "prepared_at": "2026-11-18T12:05:38Z",
+  "problems": [
+    {
+      "id": "view-scalar-index",
+      "role": "fix",
+      "title": "Scalar indexing of a traced one-dimensional view fails during compilation",
+      "summary": "The one-dimensional reindex path receives a scalar where Base.reindex needs a tuple and must forward mapped indices individually. Upstream #3663 also corrects tuple passing; the fork normalizes through Base.to_indices and exercises nested and Cartesian views.",
+      "repairs": [
+        {
+          "id": "pkpd-view-conversion-20260929",
+          "covers": [
+            "implementation",
+            "regression"
+          ]
+        }
+      ],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3360",
+          "relation": "related"
+        },
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3663",
+          "relation": "fixes"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "69797a668e029b31ab474a72fde4ee105623f780",
+            "title": "Fix traced view indices and nested primitive conversion broadcasts",
+            "original": [
+              "69797a668e029b31ab474a72fde4ee105623f780"
+            ]
+          }
+        ],
+        "why_together": "This published commit contains two independent corrections. Its TracedUtils change and view_scalar_indices fixture repair the view path; its TracedRArray change and bcast_type_casts fixture repair nested broadcast. The fork publishes them together."
+      },
+      "depends_on": [],
+      "requires": [
+        {
+          "name": "Enzyme stack pin",
+          "repo": "nsiccha/Enzyme",
+          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme-JAX stack pin",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme.jl stack pin",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        }
+      ],
+      "validation": [
+        {
+          "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "result": "passed",
+          "detail": "28 assertions passed on the CPU with the original view fixture.",
+          "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3360"
+        },
+        {
+          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+          "tests": [],
+          "result": "not-run",
+          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+        }
+      ]
+    },
+    {
+      "id": "nested-broadcast-conversion",
+      "role": "fix",
+      "title": "A primitive conversion fails when nested inside a traced broadcast",
+      "summary": "Float64.(x[1:3]) succeeds by itself, but using the converted values in a fused broadcast can call a primitive constructor on a traced scalar during element-type inference.",
+      "repairs": [
+        {
+          "id": "pkpd-view-conversion-20260929",
+          "covers": [
+            "implementation",
+            "regression"
+          ]
+        }
+      ],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3360",
+          "relation": "related"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "69797a668e029b31ab474a72fde4ee105623f780",
+            "title": "Fix traced view indices and nested primitive conversion broadcasts",
+            "original": [
+              "69797a668e029b31ab474a72fde4ee105623f780"
+            ]
+          }
+        ],
+        "why_together": "This published commit contains two independent corrections. Its TracedUtils change and view_scalar_indices fixture repair the view path; its TracedRArray change and bcast_type_casts fixture repair nested broadcast. The fork publishes them together."
+      },
+      "depends_on": [],
+      "requires": [
+        {
+          "name": "Enzyme stack pin",
+          "repo": "nsiccha/Enzyme",
+          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme-JAX stack pin",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme.jl stack pin",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        }
+      ],
+      "validation": [
+        {
+          "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
+          "tests": [
+            "test/core/bcast_type_casts.jl"
+          ],
+          "result": "passed",
+          "detail": "88 assertions passed; the same driver recorded one known-broken optimizer precision assertion.",
+          "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3360"
+        },
+        {
+          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+          "tests": [],
+          "result": "not-run",
+          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+        }
+      ],
+      "draft": {
+        "title": "A primitive conversion fails when nested inside a traced broadcast",
+        "prepared_at": "2026-11-18T12:05:38Z",
+        "body": "## Reproducer\n\nRun this example\n\n```julia\nusing Reactant\nf(x) = sum(Float64.(x[1:3]) .+ log.(1:3))\nx = Float32[1, 2, 3]\ncompiled = Reactant.@jit f(Reactant.to_rarray(x))\n@assert compiled ≈ f(x)\n```\n\n## Observed\n\nOn Reactant 0.2.289 the nested broadcast fails during element-type inference. The standalone conversion succeeds.\n\n## Expected\n\nThe compiled reduction should match Julia and preserve the element conversion when used inside another broadcast.\n\n## Proposed fix\n\nConstruct the unary primitive-conversion broadcast node with the traced TypeCast before nesting it. This keeps fusion and gives inference a callable that accepts traced scalars. The fork implementation is proposed in [PR #3360](https://github.com/EnzymeAD/Reactant.jl/pull/3360)."
+      }
+    },
+    {
+      "id": "trace-index-sentinels",
+      "role": "fix",
+      "title": "Traced branches capture indexing begin and end as variables",
+      "summary": "An indexing endpoint in a traced branch or condition can raise UndefVarError before the branch runs. The local macro filters the indexing symbols; the original report records the fix in ExpressionExplorer 1.1.6.",
+      "repairs": [
+        {
+          "id": "pkpd-trace-index-sentinels-20260929",
+          "covers": [
+            "implementation",
+            "regression"
+          ]
+        }
+      ],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3361",
+          "relation": "related"
+        },
+        {
+          "url": "https://github.com/JuliaPluto/ExpressionExplorer.jl/pull/20",
+          "relation": "superseded-by"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "fbb11023c774bdef1c8e462158ef4ca71b36d9bb",
+            "title": "Fix @trace indexing sentinel capture",
+            "original": [
+              "fbb11023c774bdef1c8e462158ef4ca71b36d9bb"
+            ]
+          }
+        ],
+        "why_together": "One commit changes capture filtering and includes the condition/branch regression matrix."
+      },
+      "depends_on": [],
+      "requires": [
+        {
+          "name": "Enzyme stack pin",
+          "repo": "nsiccha/Enzyme",
+          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme-JAX stack pin",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme.jl stack pin",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        }
+      ],
+      "validation": [
+        {
+          "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
+          "tests": [
+            "test/core/trace_index_sentinels.jl",
+            "unoptimized HLO conditional"
+          ],
+          "result": "passed",
+          "detail": "146 fixture assertions and one HLO assertion passed with ExpressionExplorer 1.1.5.",
+          "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3361",
+          "julia": "1.10.11",
+          "native_build": "Reactant_jll 0.0.413+0"
+        },
+        {
+          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+          "tests": [],
+          "result": "not-run",
+          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+        }
+      ]
+    },
+    {
+      "id": "adjoint-gather",
+      "role": "fix",
+      "title": "Gathering linear indices from a traced adjoint or transpose fails",
+      "summary": "An index vector into a traced row wrapper can raise BoundsError during compilation. Materializing the wrapper before gathering preserves order and conjugation; normalization must also preserve index shape and static bounds checks.",
+      "repairs": [
+        {
+          "id": "fix/adjoint-linear-gather",
+          "covers": [
+            "implementation",
+            "regression"
+          ]
+        }
+      ],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/issues/3381",
+          "relation": "reports"
+        },
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3382",
+          "relation": "related"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "41919b47da9f44b645b591ef79ff656f83df4bb7",
+            "title": "Fix linear indexing of traced adjoint and transpose wrappers",
+            "original": [
+              "41919b47da9f44b645b591ef79ff656f83df4bb7"
+            ]
+          },
+          {
+            "sha": "77f00510315c65447ebcd8494c61b3bae98b7227",
+            "title": "Preserve static index validation and gather shape",
+            "original": [
+              "77f00510315c65447ebcd8494c61b3bae98b7227"
+            ]
+          }
+        ],
+        "why_together": "The first commit handles wrappers and the second retains Boolean masks, invalid-index errors and Cartesian result shape."
+      },
+      "depends_on": [],
+      "requires": [
+        {
+          "name": "Enzyme stack pin",
+          "repo": "nsiccha/Enzyme",
+          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme-JAX stack pin",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        },
+        {
+          "name": "Enzyme.jl stack pin",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
+          "why": "Revision selected together with this component for the October 13 compiler stack."
+        }
+      ],
+      "validation": [
+        {
+          "base": "19bf4a5be57bc6c55e3b877dfade4c38947e516e",
+          "tests": [
+            "test/core/indexing.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/linear_algebra.jl"
+          ],
+          "result": "passed",
+          "detail": "574 assertions passed; the new regression failed on the unmodified upstream base. The review also checked repeated-index reverse accumulation.",
+          "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3382"
+        },
+        {
+          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+          "tests": [],
+          "result": "not-run",
+          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+        }
+      ]
+    }
+  ]
+}
