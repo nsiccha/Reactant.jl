@@ -2358,19 +2358,18 @@ end
     )
     #! format: on
 
-    return TracedRArray{T}(
-        MLIR.IR.result(
-            MLIR.Dialects.stablehlo.gather(
-                src.mlir_data,
-                gather_indices.mlir_data;
-                dimension_numbers,
-                slice_sizes,
-                indices_are_sorted,
-                location,
-            ),
-            1,
-        ),
+    gather_op = MLIR.Dialects.stablehlo.gather(
+        src.mlir_data,
+        gather_indices.mlir_data;
+        dimension_numbers,
+        slice_sizes,
+        indices_are_sorted,
+        location,
     )
+    # Preserve the authored order of indexed and elementwise work through AD,
+    # even when the relative input/output sizes change during specialization.
+    MLIR.IR.setattr!(gather_op, "enzymexla.preserve_gather_order", MLIR.IR.UnitAttribute())
+    return TracedRArray{T}(MLIR.IR.result(gather_op, 1))
 end
 
 _loop_seed_value(x) = x
@@ -2466,6 +2465,11 @@ _loop_seed_value(x::Base.RefValue) = typeof(x)(_loop_seed_value(x[]))
         body=body_reg,
         location,
     )
+
+    # Shape specialization does not turn an authored loop into fixed
+    # structural algebra. Keep its body as control flow through optimization
+    # and ordinary reverse-mode AD, including small trip counts.
+    MLIR.IR.setattr!(while_op, "enzymexla.preserve_loop", MLIR.IR.UnitAttribute())
 
     if !mincut
         MLIR.IR.setattr!(while_op, "enzyme.disable_mincut", MLIR.IR.UnitAttribute())
