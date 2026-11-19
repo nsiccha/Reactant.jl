@@ -23,8 +23,8 @@
           "source": "Native library fixes integrated into dogfood. Enzyme.jl selects its published binary independently."
         }
       ],
-      "commit": "c344b930392fe0a5ef75dcc9dedfb96ff2584f7e",
-      "tree": "df007e89a3c2c954d2030b93794c3eb8732fe5cb",
+      "commit": "c66720f23242040fcde0a2daf2e22a8ba748495b",
+      "tree": "983e3c6768a32eadea621e3de9008080040a15ba",
       "upstream_note": "The unified source contains upstream main, the MLIR custom rules, the native Julia fixes and the recursive subcall tape changes."
     },
     "Enzyme-JAX": {
@@ -102,8 +102,8 @@
           "source": "StableHLO if/case reverse: keep adjoints of branch values in the branch"
         }
       ],
-      "commit": "c8ed168cd488c57ad24bc20180619ed9cc85174f",
-      "tree": "4ad358df99044ebbff4379e446f19d072f70d62a",
+      "commit": "4fd44a15084ccc9cbb2fed61b1b73d8d84d33b29",
+      "tree": "32114286812cbbd083651ae253024054c8a0a70c",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
