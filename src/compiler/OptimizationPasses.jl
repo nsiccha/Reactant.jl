@@ -788,7 +788,9 @@ function run_default_compiler_pipeline!(mod, before_batch, before_ad, after_ad, 
         before_ad(mod, key * "_before_ad")
     end
     expose_loop_limits_for_ad!(MLIR.IR.Operation(mod))
-    run_pass_pipeline!(mod, enzyme_pass, key * "_ad")
+    # Split reverse rules can introduce tensor arithmetic in the calling
+    # function as well as in generated derivative functions.
+    run_pass_pipeline!(mod, enzyme_pass * ",arith-raise{stablehlo=true}", key * "_ad")
     after_ad(mod, key * "_after_ad")
     return mod
 end
