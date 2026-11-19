@@ -129,7 +129,7 @@
     },
     "Reactant.jl": {
       "upstream_url": "https://github.com/EnzymeAD/Reactant.jl.git",
-      "upstream_main": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+      "upstream_main": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
       "fork_url": "https://github.com/nsiccha/Reactant.jl.git",
       "inputs": [
         {
