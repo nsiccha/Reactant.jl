@@ -33,7 +33,8 @@ end
 
 function retained_work_inventory(ops)
     simplified = ("stablehlo.constant", "stablehlo.reshape", "stablehlo.add",
-        "stablehlo.multiply", "stablehlo.subtract", "stablehlo.negate")
+        "stablehlo.multiply", "stablehlo.subtract", "stablehlo.negate",
+        "stablehlo.optimization_barrier")
     return Dict(name => count for (name, count) in ops if name ∉ simplified)
 end
 
@@ -105,7 +106,7 @@ end
 @testset "Shape-specialized loops retain default primal and reverse structure" begin
     inventories = []
     for K in (2, 4, 8, 16)
-        u = [1.5; fill(0.8, K)]
+        u = [1.5; [0.37 + 0.06 * i for i in 1:K]]
         ru = Reactant.to_rarray(u)
         primal = @compile retained_diagonal_loss(ru)
         reverse = @compile retained_diagonal_gradient(ru)
@@ -114,7 +115,8 @@ end
             retained_loop_inventory(@code_hlo retained_diagonal_gradient(ru)),
         )
         @test get(ops[1], "stablehlo.while", 0) == 1
-        @test get(ops[2], "stablehlo.while", 0) == 2
+        # The reverse accumulates both the scalar and diagonal cotangents in one loop.
+        @test get(ops[2], "stablehlo.while", 0) == 1
         println("retained diagonal complete inventory, K=", K, ": ", ops)
         push!(inventories, ops)
 
@@ -123,9 +125,9 @@ end
         xla_ops = map(retained_executable_inventory, (primal, reverse))
         println("retained diagonal executable inventory, K=", K, ": ", xla_ops)
         @test get(xla_ops[1], "while", 0) == 1
-        @test get(xla_ops[2], "while", 0) == 2
+        @test get(xla_ops[2], "while", 0) == 1
         @test get(xla_ops[1], "conditional", 0) == 1
-        @test get(xla_ops[2], "conditional", 0) == 2
+        @test get(xla_ops[2], "conditional", 0) == 1
         @test all(ops -> get(ops, "log", 0) == 1, xla_ops)
 
         for w in (u, u .+ 0.03)
@@ -148,7 +150,7 @@ end
         end
     end
     # Complete inventories stop growing; small dimensions may share constants
-    # or simplify scalar identities without replicating the loop's work.
+    # or simplify scalar identities. The singleton bound has a retention barrier.
     @test inventories[3] == inventories[4]
     @test allequal([map(retained_work_inventory, pair) for pair in inventories])
 end

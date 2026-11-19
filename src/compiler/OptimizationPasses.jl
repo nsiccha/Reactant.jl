@@ -590,6 +590,8 @@ function preserve_singleton_loop_predicates!(op)
     # The body identity dominates this block and its nested regions, including
     # nested loop conditions. It does not dominate this loop's own condition.
     depend_singleton_guards_on_induction!(body, MLIR.IR.result(equality, 1))
+    # Imported StableHLO loops need the same retention marker as traced loops.
+    MLIR.IR.setattr!(op, "enzymexla.preserve_loop", MLIR.IR.UnitAttribute())
     MLIR.IR.setattr!(op, "reactant.singleton_predicate", MLIR.IR.Attribute(true))
     return true
 end
