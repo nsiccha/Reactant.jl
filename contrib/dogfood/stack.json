@@ -102,8 +102,8 @@
           "source": "StableHLO if/case reverse: keep adjoints of branch values in the branch"
         }
       ],
-      "commit": "f6ee18154b7f4ff6fdce856fc3c3e408b7f39dc0",
-      "tree": "ca5892b58ba59ec919cce3862f4418115601e2e5",
+      "commit": "d7da89f37bfe63b4b1429cac0165261275d42ccb",
+      "tree": "525cc159039e1bada08bdac33df051c924748200",
       "superseded_by_upstream": [
         {
           "branch": "complex-zero-constant-folds",
