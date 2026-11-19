@@ -3,14 +3,14 @@
   "line": {
     "repo": "nsiccha/Reactant.jl",
     "ref": "dogfood",
-    "sha": "24383df755ab7b1641048dfcb8d67e29fbef7097"
+    "sha": "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181"
   },
   "upstream": {
     "repo": "EnzymeAD/Reactant.jl",
     "ref": "main",
-    "sha": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8"
+    "sha": "1a43717b26c1f475c65218d4d7a41eb61ceb182a"
   },
-  "prepared_at": "2026-11-18T12:05:38Z",
+  "prepared_at": "2026-11-19T03:35:26+00:00",
   "problems": [
     {
       "id": "view-scalar-index",
@@ -52,25 +52,84 @@
       "depends_on": [],
       "requires": [
         {
-          "name": "Enzyme stack pin",
+          "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme-JAX stack pin",
+          "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme.jl stack pin",
+          "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
       "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "bounds": "default",
+          "native_build": "Released Reactant_jll 0.0.446+0 CPU library sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "detail": "All 28 assertions passed on laptop-vm with Reactant 3480e5d15efd, Enzyme.jl 962fc64c, LLVM.jl 10.4.3 and GPUCompiler 2.23.3. The run used the release CPU library and both published native Enzyme products at c423e860."
+        },
         {
           "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
           "tests": [
@@ -81,10 +140,54 @@
           "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3360"
         },
         {
-          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
-          "tests": [],
-          "result": "not-run",
-          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/bcast_type_casts.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 84 passes, 1 failures and 0 errors. The fused conversion broadcast lost Float32 rounding within the nested conversion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 28 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
         }
       ]
     },
@@ -124,25 +227,73 @@
       "depends_on": [],
       "requires": [
         {
-          "name": "Enzyme stack pin",
+          "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme-JAX stack pin",
+          "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme.jl stack pin",
+          "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
       "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/view_scalar_indices.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
         {
           "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
           "tests": [
@@ -153,10 +304,54 @@
           "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3360"
         },
         {
-          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
-          "tests": [],
-          "result": "not-run",
-          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/bcast_type_casts.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 84 passes, 1 failures and 0 errors. The fused conversion broadcast lost Float32 rounding within the nested conversion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 28 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/view_scalar_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
         }
       ],
       "draft": {
@@ -205,25 +400,80 @@
       "depends_on": [],
       "requires": [
         {
-          "name": "Enzyme stack pin",
+          "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme-JAX stack pin",
+          "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme.jl stack pin",
+          "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
       "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "bounds": "default",
+          "native_build": "Released Reactant_jll 0.0.446+0 CPU library sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "detail": "All 146 assertions passed on laptop-vm with Reactant 3480e5d15efd, Enzyme.jl 962fc64c, LLVM.jl 10.4.3 and GPUCompiler 2.23.3. The run used the release CPU library and both published native Enzyme products at c423e860."
+        },
         {
           "base": "939813e74b4577141d9ab214c413f2d93cb1d824",
           "tests": [
@@ -237,10 +487,44 @@
           "native_build": "Reactant_jll 0.0.413+0"
         },
         {
-          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
-          "tests": [],
-          "result": "not-run",
-          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 146 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/trace_index_sentinels.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
         }
       ]
     },
@@ -291,25 +575,77 @@
       "depends_on": [],
       "requires": [
         {
-          "name": "Enzyme stack pin",
+          "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "97121ac5edc086a090bdefd104b79f66b805197a",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme-JAX stack pin",
+          "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "6143e7305d84cffd815dba3b11a696ba3a4998fd",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
-          "name": "Enzyme.jl stack pin",
+          "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "e02eb37420fcbd91508151b3a782b0c5b2853162",
-          "why": "Revision selected together with this component for the October 13 compiler stack."
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
       "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/indexing.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/linear_algebra.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/indexing.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/linear_algebra.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/indexing.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/linear_algebra.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/indexing.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/linear_algebra.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
         {
           "base": "19bf4a5be57bc6c55e3b877dfade4c38947e516e",
           "tests": [
@@ -322,10 +658,1449 @@
           "evidence": "https://github.com/EnzymeAD/Reactant.jl/pull/3382"
         },
         {
-          "base": "d2285670ebcfb610c8efd2ce83ea08cbd281b5a8",
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 190 passes, 0 failures and 1 errors. The source rejected @view inside a traced loop during macro expansion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/wrapped_arrays.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 171 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/linear_algebra.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 262 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        }
+      ]
+    },
+    {
+      "id": "lazy-singleton-loops",
+      "role": "fix",
+      "title": "Singleton loops in guarded branches lose their predicates",
+      "summary": "The generated optimization pipeline keeps lazy branches and preserves singleton induction state while honoring custom pass pipelines.",
+      "repairs": [],
+      "upstream_refs": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "fdced605a691460669f0a6fb3e5b538f13053658",
+            "title": "Preserve lazy branches and their scalar loops through default compilation",
+            "original": [
+              "fdced605a691460669f0a6fb3e5b538f13053658"
+            ]
+          },
+          {
+            "sha": "8d1a509434e20e9655547d030423d2f489f65b32",
+            "title": "Preserve custom pass pipelines and memoize constant loop bounds",
+            "original": [
+              "8d1a509434e20e9655547d030423d2f489f65b32"
+            ]
+          },
+          {
+            "sha": "2951f7da941300dd43836034adb54d4c03d2d61c",
+            "title": "Scope guarded loop preservation to generated rewrites and proven singleton trips",
+            "original": [
+              "2951f7da941300dd43836034adb54d4c03d2d61c"
+            ]
+          },
+          {
+            "sha": "9367294d5b976a340d86cf4dc0c8a3e853d33a88",
+            "title": "Keep singleton guard predicates dependent on their integer induction state",
+            "original": [
+              "9367294d5b976a340d86cf4dc0c8a3e853d33a88"
+            ]
+          },
+          {
+            "sha": "93cf6a6c4e32217ed5f66c6ed7bfdc0db696d7ce",
+            "title": "Normalize proven singleton integer state for ordinary loop cache lowering",
+            "original": [
+              "93cf6a6c4e32217ed5f66c6ed7bfdc0db696d7ce"
+            ]
+          },
+          {
+            "sha": "125b298e3f02eb881a76e5b94cbc75ce14f52bf1",
+            "title": "Normalize the actual singleton loop condition with multiple integer states",
+            "original": [
+              "125b298e3f02eb881a76e5b94cbc75ce14f52bf1"
+            ]
+          },
+          {
+            "sha": "30c9347d22605be59830b43135a6dc9aa73c9fb4",
+            "title": "Keep singleton body identities within dominated regions",
+            "original": [
+              "30c9347d22605be59830b43135a6dc9aa73c9fb4"
+            ]
+          },
+          {
+            "sha": "5a1ecf40517d0479829976bea89dc11b84c87120",
+            "title": "Preserve lazy branches and singleton loop identities",
+            "original": [
+              "5a1ecf40517d0479829976bea89dc11b84c87120"
+            ]
+          },
+          {
+            "sha": "d8cb61c45f90c0646338f3b92d64b0ab41dc0122",
+            "title": "Raise tensor arithmetic in the caller after split reverse differentiation",
+            "original": [
+              "d8cb61c45f90c0646338f3b92d64b0ab41dc0122"
+            ]
+          },
+          {
+            "sha": "1e7c74685f38fc2a4dee224cda66d763c312ea69",
+            "title": "Retain imported singleton loops and check the combined diagonal reverse loop",
+            "original": [
+              "1e7c74685f38fc2a4dee224cda66d763c312ea69"
+            ]
+          }
+        ],
+        "why_together": "These changes implement the behavior described above and supply its regression coverage on dogfood."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268 passed all 627 assertions. Verified single-trip loops retain their guard and both guarded second derivatives compile.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "failed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "failed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "failed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/lazy_control_flow.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 594 passes, 33 failures and 0 errors. Retained scalar loops and their guards failed structural checks."
+        }
+      ],
+      "requires": [],
+      "depends_on": []
+    },
+    {
+      "id": "static-exp-reverse",
+      "role": "fix",
+      "title": "Static matrix exponentials and nested reverse loops lose traced values",
+      "summary": "Real static matrix exponentials, pure condition loops, traced branch outputs and reverse loop carries use staged operations.",
+      "repairs": [],
+      "upstream_refs": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "1443ba7f624961c44ab6e501dc0836cbc4301b3d",
+            "title": "Trace real static matrix exponentials and retained reverse loops",
+            "original": [
+              "1443ba7f624961c44ab6e501dc0836cbc4301b3d"
+            ]
+          },
+          {
+            "sha": "d68d12233954ff8c410009c8fa7e84419632479d",
+            "title": "Trace static matrix exponentials and retain reverse loop carries",
+            "original": [
+              "d68d12233954ff8c410009c8fa7e84419632479d"
+            ]
+          }
+        ],
+        "why_together": "These changes implement the behavior described above and supply its regression coverage on dogfood."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/condition_loop_effects.jl",
+            "test/core/control_flow_scopes.jl",
+            "test/core/integer_indices.jl",
+            "test/integration/branch_closures.jl",
+            "test/integration/branch_host_arrays.jl",
+            "test/integration/condition_loop_reverse.jl",
+            "test/integration/integer_shifts.jl",
+            "test/integration/real_factorization_reverse.jl",
+            "test/integration/retained_loop_growth.jl",
+            "test/integration/retained_static_exp.jl",
+            "test/integration/retained_static_power.jl",
+            "test/integration/scalar_stack.jl",
+            "test/integration/static_matrix_exp.jl",
+            "test/integration/static_tensor_products.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/condition_loop_effects.jl",
+            "test/core/control_flow_scopes.jl",
+            "test/core/integer_indices.jl",
+            "test/integration/branch_closures.jl",
+            "test/integration/branch_host_arrays.jl",
+            "test/integration/condition_loop_reverse.jl",
+            "test/integration/integer_shifts.jl",
+            "test/integration/real_factorization_reverse.jl",
+            "test/integration/retained_loop_growth.jl",
+            "test/integration/retained_static_exp.jl",
+            "test/integration/retained_static_power.jl",
+            "test/integration/scalar_stack.jl",
+            "test/integration/static_matrix_exp.jl",
+            "test/integration/static_tensor_products.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/condition_loop_effects.jl",
+            "test/core/control_flow_scopes.jl",
+            "test/core/integer_indices.jl",
+            "test/integration/branch_closures.jl",
+            "test/integration/branch_host_arrays.jl",
+            "test/integration/condition_loop_reverse.jl",
+            "test/integration/integer_shifts.jl",
+            "test/integration/real_factorization_reverse.jl",
+            "test/integration/retained_loop_growth.jl",
+            "test/integration/retained_static_exp.jl",
+            "test/integration/retained_static_power.jl",
+            "test/integration/scalar_stack.jl",
+            "test/integration/static_matrix_exp.jl",
+            "test/integration/static_tensor_products.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/condition_loop_effects.jl",
+            "test/core/control_flow_scopes.jl",
+            "test/core/integer_indices.jl",
+            "test/integration/branch_closures.jl",
+            "test/integration/branch_host_arrays.jl",
+            "test/integration/condition_loop_reverse.jl",
+            "test/integration/integer_shifts.jl",
+            "test/integration/real_factorization_reverse.jl",
+            "test/integration/retained_loop_growth.jl",
+            "test/integration/retained_static_exp.jl",
+            "test/integration/retained_static_power.jl",
+            "test/integration/scalar_stack.jl",
+            "test/integration/static_matrix_exp.jl",
+            "test/integration/static_tensor_products.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "test/integration/scalar_stack.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/condition_loop_effects.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 5 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/control_flow_scopes.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 25 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/integer_indices.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 12 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/branch_closures.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 71 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/branch_host_arrays.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 36 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/condition_loop_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 82 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/integer_shifts.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 174 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/real_factorization_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 36 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/retained_loop_growth.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 50 passes, 2 failures and 0 errors. Loop body inventories differed across the tested sizes."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/retained_static_exp.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 16 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/retained_static_power.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 224 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/scalar_stack.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 14 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/static_matrix_exp.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 135 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/static_tensor_products.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 56 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/integration/scalar_stack.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/integration/scalar_stack.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        }
+      ],
+      "requires": [
+        {
+          "name": "StaticArrays.jl source",
+          "repo": "nsiccha/StaticArrays.jl",
+          "sha": "03fd23a659ad3597c146b650da53a3751878ec8f",
+          "why": "Selected in Reactant’s compiler stack manifest."
+        },
+        {
+          "name": "Enzyme-JAX source",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
+        },
+        {
+          "name": "Enzyme.jl source",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
+        }
+      ],
+      "depends_on": [
+        "nsiccha/Enzyme-JAX#checkpoint-replay"
+      ]
+    },
+    {
+      "id": "retained-loop-gather",
+      "role": "fix",
+      "title": "Reverse differentiation changes loop structure and gather ordering",
+      "summary": "Lowering preserves marked loop bodies and their gather order through the optimized XLA executable.",
+      "repairs": [],
+      "upstream_refs": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "e673b95d4bb0ffd70890d587a25b7b500ac02f30",
+            "title": "Retain shape-specialized loop bodies through default reverse and optimization",
+            "original": [
+              "e673b95d4bb0ffd70890d587a25b7b500ac02f30"
+            ]
+          },
+          {
+            "sha": "989eb6d676385870e0280db9c659d9eba986e4b6",
+            "title": "Check retained control flow in optimized XLA executables",
+            "original": [
+              "989eb6d676385870e0280db9c659d9eba986e4b6"
+            ]
+          },
+          {
+            "sha": "da821a7e63fd095d194b16a38444be29df944620",
+            "title": "Test invariant work stays lazy inside retained loops",
+            "original": [
+              "da821a7e63fd095d194b16a38444be29df944620"
+            ]
+          },
+          {
+            "sha": "c60176ec6ce561d0f0bfef20392fa77889d60acf",
+            "title": "Retain gather ordering across shape specialization and reverse AD",
+            "original": [
+              "c60176ec6ce561d0f0bfef20392fa77889d60acf"
+            ]
+          },
+          {
+            "sha": "1e7c74685f38fc2a4dee224cda66d763c312ea69",
+            "title": "Retain imported singleton loops and check the combined diagonal reverse loop",
+            "original": [
+              "1e7c74685f38fc2a4dee224cda66d763c312ea69"
+            ]
+          }
+        ],
+        "why_together": "These changes implement the behavior described above and supply its regression coverage on dogfood."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268 passed all 154 assertions. The optimized adjoint has one guarded loop. Nonuniform diagonal gradients matched their analytic values. The 1,024-lane executable has zero full-buffer copies in the reverse loop body, down from two.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "failed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "failed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "failed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 133 passes, 21 failures and 0 errors. Loop inventory and retained-invariant checks failed."
+        }
+      ],
+      "requires": [
+        {
+          "name": "Enzyme-JAX source",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
+        }
+      ],
+      "depends_on": [
+        "nsiccha/Enzyme-JAX#retain-reduction-scatter-gather"
+      ]
+    },
+    {
+      "id": "integer-besselix",
+      "role": "fix",
+      "title": "Scaled Bessel I needs a traced integer order",
+      "summary": "Integer-order Bessel I supports traced runtime orders and differentiation.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "relation": "fixes",
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3380"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "bb47a6b02207ba756c13c439ceb7d5b01001e3fb",
+            "title": "Implement traced integer-order scaled modified Bessel I",
+            "original": [
+              "bb47a6b02207ba756c13c439ceb7d5b01001e3fb"
+            ]
+          }
+        ],
+        "why_together": "These changes implement the behavior described above and supply its regression coverage on dogfood."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 45 passes, 0 failures and 2 errors. Two Bessel reverse compilations failed MLIR verification because a cached operand did not dominate its use."
+        }
+      ],
+      "requires": [],
+      "depends_on": []
+    },
+    {
+      "id": "rank-zero-reduction",
+      "role": "fix",
+      "title": "Mapped rank-zero reductions choose the wrong accumulator type",
+      "summary": "Scalar arrays preserve mapped and accumulator types for sum and product, including explicit initial values.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "relation": "fixes",
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3367"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "5d29a9355f628d04bc3f49adb62a6e43c1d5229c",
+            "title": "Fix rank-zero mapped reductions with inferred result types",
+            "original": [
+              "5d29a9355f628d04bc3f49adb62a6e43c1d5229c"
+            ]
+          }
+        ],
+        "why_together": "These changes implement the behavior described above and supply its regression coverage on dogfood."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "bounds": "default",
+          "native_build": "Released Reactant_jll 0.0.446+0 CPU library sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "detail": "All 136 assertions passed on laptop-vm with Reactant 3480e5d15efd, Enzyme.jl 962fc64c, LLVM.jl 10.4.3 and GPUCompiler 2.23.3. The run used the release CPU library and both published native Enzyme products at c423e860."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 136 passes, 0 failures and 0 errors."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/rank_zero_reduction.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        }
+      ],
+      "requires": [],
+      "depends_on": []
+    },
+    {
+      "id": "llvm10-compatibility",
+      "role": "fix",
+      "title": "Reactant cannot share an LLVM.jl 10 environment with Enzyme.jl",
+      "summary": "Reactant used the LLVM.jl 9 IR and ownership APIs. Port the CPU JIT, generated calls, GPUCompiler module disposal and MLIR memory checking to LLVM.jl 10.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "relation": "fixes",
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3384"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "0443e7558a8251e03d54582c5e7bbc3d371f05de",
+            "title": "Drop support for GPUCompiler 1",
+            "original": [
+              "0443e7558a8251e03d54582c5e7bbc3d371f05de"
+            ]
+          },
+          {
+            "sha": "2674c46f2b0c85419acd82918bdbffc58c2bf295",
+            "title": "Port to LLVM.jl 10.0",
+            "original": [
+              "2674c46f2b0c85419acd82918bdbffc58c2bf295"
+            ]
+          },
+          {
+            "sha": "7712c73ca2d459ef851d00679a428f3559fc34b4",
+            "title": "Generate the call to XLAExecuteSharded with `@llvmgenerated`",
+            "original": [
+              "7712c73ca2d459ef851d00679a428f3559fc34b4"
+            ]
+          },
+          {
+            "sha": "0d5842cbeebc08109977228b3fd5792a3f648d4a",
+            "title": "Dispose of the modules that GPUCompiler returns",
+            "original": [
+              "0d5842cbeebc08109977228b3fd5792a3f648d4a"
+            ]
+          },
+          {
+            "sha": "6f00b3acbb9c4a481916297fc16335d678c5b8ee",
+            "title": "Check the MLIR wrappers with LLVM.jl's public memcheck instrumentation",
+            "original": [
+              "6f00b3acbb9c4a481916297fc16335d678c5b8ee"
+            ]
+          },
+          {
+            "sha": "031b875ed528e352a44a015d80952fbf4c0e9b77",
+            "title": "Require Enzyme 0.13.221 for LLVM.jl 10 support",
+            "original": [
+              "031b875ed528e352a44a015d80952fbf4c0e9b77"
+            ]
+          },
+          {
+            "sha": "58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520",
+            "title": "Load the MLIR thread pool before enabling parallel compilation",
+            "original": [
+              "58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520"
+            ]
+          }
+        ],
+        "why_together": "These upstream PR commits migrate the LLVM APIs and ownership together and select an Enzyme.jl version that admits LLVM.jl 10. The integration also loads the LLVM thread pool used by the current upstream compiler."
+      },
+      "validation": [
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "bounds": "default",
+          "native_build": "Released Reactant_jll 0.0.446+0 CPU library sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "tests": [
+            "Compiled CPU sum-of-squares gradient"
+          ],
+          "detail": "All 3 assertions passed on laptop-vm with Reactant 3480e5d15efd, Enzyme.jl 962fc64c, LLVM.jl 10.4.3 and GPUCompiler 2.23.3. The run used the release CPU library and both published native Enzyme products at c423e860."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
           "tests": [],
           "result": "not-run",
-          "detail": "No fresh compiler or runtime test on this pinned stack during the source audit."
+          "detail": "The rebuilt CPU library has yet to run these frontend tests."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "julia": "1.10.12",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "julia": "1.10.12",
+          "native_build": "15345e27c376aec9b3791ad8511e06d5a5e116b3",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Six Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl"
+          ],
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 produced 2x, reported all six repairs and passed the readonly stack-slot regression. Both loaded product paths were verified."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "julia": "1.12.7",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "julia": "1.12.7",
+          "native_build": "15345e27c376aec9b3791ad8511e06d5a5e116b3",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Six Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl"
+          ],
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 produced 2x, reported all six repairs and passed the readonly stack-slot regression. Both loaded product paths were verified."
+        },
+        {
+          "base": "b9e50ef722a362211ef13d4b0166427fde7c434c",
+          "tests": [
+            "Six consumer repair capability queries",
+            "Native reverse sum-of-squares gradient",
+            "Compiled CPU sum and reverse gradient"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Earlier staged source 7d2fa8a9502c488c5f836cb30aed344888d289e7. Reactant 7d2fa8a9502c488c5f836cb30aed344888d289e7 and Enzyme.jl 701f2a807169d8f4e0dd0330e09bc015e4011a62 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "tests": [
+            "Load Reactant with the LLVM.jl 10 compiler"
+          ],
+          "result": "failed",
+          "detail": "On Reactant de2f2f8a3bfef2d3adaff315d4b63969b19a078a with Enzyme.jl 01d65bc18c40, package loading failed because the MLIR ThreadPool wrapper was absent from its module. The frontend fixtures could not start."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "native_build": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Seven Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl",
+            "Enzyme.jl test/strong_zero_rules.jl"
+          ],
+          "detail": "Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 produced 2x, reported all seven repairs and passed the stack-slot and strong-zero tests. Both loaded product paths were verified."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "native_build": "adc222b3c2e0a5e715e3fbe4638213bf4bc68d51",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Seven Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl",
+            "Enzyme.jl test/strong_zero_rules.jl"
+          ],
+          "detail": "Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 produced 2x, reported all seven repairs and passed the stack-slot and strong-zero tests. Both loaded product paths were verified."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Seven consumer repair capability queries",
+            "Native reverse sum-of-squares gradient",
+            "Compiled CPU sum and reverse gradient",
+            "Two-thread CPU compilation and thread-pool reuse"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.10.12",
+          "native_build": "c423e860eed0bc541955463fc6ded3b81cd82660",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Ten Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl",
+            "Enzyme.jl test/strong_zero_rules.jl"
+          ],
+          "detail": "Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc produced 2x, reported all ten repairs and passed the stack-slot and strong-zero tests. Both loaded product paths were verified."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "result": "passed",
+          "tests": [
+            "Pkg.develop the pinned Reactant, ReactantCore, Enzyme.jl, EnzymeCore and StaticArrays sources together"
+          ],
+          "detail": "Resolved LLVM.jl 10.4.3, GPUCompiler 2.23.3, Enzyme_jll 0.0.301+0 and Reactant_jll 0.0.446+0 with Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "native_build": "c423e860eed0bc541955463fc6ded3b81cd82660",
+          "result": "passed",
+          "tests": [
+            "Native Julia reverse gradient of sum(abs2, x)",
+            "Ten Enzyme.jl repair capability queries",
+            "Enzyme.jl test/rule_handler_slot_reloads.jl",
+            "Enzyme.jl test/strong_zero_rules.jl"
+          ],
+          "detail": "Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc produced 2x, reported all ten repairs and passed the stack-slot and strong-zero tests. Both loaded product paths were verified."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "julia": "1.12.7",
+          "native_build": "c423e860eed0bc541955463fc6ded3b81cd82660",
+          "result": "passed",
+          "tests": [
+            "Enzyme.jl test/boxed_storage.jl"
+          ],
+          "detail": "With Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc, all 29 assertions for reverse indexing into boxed Array and Memory storage passed."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Ten consumer repair capability queries",
+            "Native reverse sum-of-squares gradient",
+            "Compiled CPU sum and reverse gradient",
+            "Two-thread CPU compilation and thread-pool reuse"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        }
+      ],
+      "requires": [
+        {
+          "name": "Enzyme.jl source",
+          "repo": "nsiccha/Enzyme.jl",
+          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "why": "Selected in Reactant’s compiler stack manifest."
+        }
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "traced-view-macro",
+      "role": "fix",
+      "title": "Array views are rejected inside traced control flow",
+      "summary": "A change for nested traces made ordinary Julia macros such as @view fail inside traced branches and loops. The frontend checks the macro expansion in the calling module, including returns and loop exits introduced by a macro.",
+      "repairs": [],
+      "upstream_refs": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a",
+            "title": "Check ordinary macro expansions in the scope of traced control flow",
+            "original": [
+              "a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a"
+            ]
+          }
+        ],
+        "why_together": "The ReactantCore change restores ordinary macros inside traced code. The scope test checks that a macro returning from the calling function is still rejected."
+      },
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "native_build": "64f912488dafa61a437b03b05909419be349a5d55f85d27caba41de12e06dbf5",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 8534f078036e591ac7859c549335790bc13370da. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "native_build": "c1ce4cd5ff125ebf1e5486def3c2f04b5f45905da75b55fcc691496d5f077f42",
+          "result": "passed",
+          "detail": "Complete Julia CPU regression files on Reactant 5ec7602b97ecea05cd4c13a879521c334d4f0d47. Each process verified the loaded compiler library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "native_build": "9a8fd7d60a04c944b93b4ef3f9f12dabe68f867c9c0b92c462232f4c0e258efb",
+          "result": "passed",
+          "detail": "Complete CPU regression files on Reactant 0ece9b320ff381546db8a2c8afbaa355db6df162 with the rebuilt LLVM 24 library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "failed",
+          "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 190 passes, 0 failures and 1 errors. The source rejected @view inside a traced loop during macro expansion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Macroexpand @view inside traced if, while and for"
+          ],
+          "julia": "1.10.12",
+          "result": "failed",
+          "detail": "Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 rejected ordinary views during macro expansion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Macroexpand @view inside traced if, while and for",
+            "Reject macro-generated return and loop exit in the calling scope",
+            "Execute the ordinary view loop"
+          ],
+          "julia": "1.10.12",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a passed the frontend checks."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Macroexpand @view inside traced if, while and for"
+          ],
+          "julia": "1.12.7",
+          "result": "failed",
+          "detail": "Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 rejected ordinary views during macro expansion."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "Macroexpand @view inside traced if, while and for",
+            "Reject macro-generated return and loop exit in the calling scope",
+            "Execute the ordinary view loop"
+          ],
+          "julia": "1.12.7",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a passed the frontend checks."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant a618fbcabc083e7712bf58f6d82bc8ac1b7bb05a and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063 ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "174f87c1ed524b78dab94aab1fea283d9fd4484b",
+          "tests": [
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
+          "result": "passed",
+          "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        }
+      ],
+      "requires": [],
+      "depends_on": []
+    },
+    {
+      "id": "llvm24-compiler-pins",
+      "role": "fix",
+      "title": "Select the LLVM 24-compatible Enzyme compiler in Reactant",
+      "summary": "Building the Reactant CPU library requires the version-aware Enzyme branch handling. The Bazel dependency and the integration manifest now identify the same compiler sources, including their Git trees.",
+      "repairs": [],
+      "upstream_refs": [],
+      "depends_on": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "efcf2cca8c760665c4b433ea18fc7f49582553eb",
+            "title": "Pin the compiler stack with LLVM 24 branch support",
+            "original": [
+              "efcf2cca8c760665c4b433ea18fc7f49582553eb"
+            ]
+          },
+          {
+            "sha": "3480e5d15efd44dc4e593d9b006832a58c79fd6a",
+            "title": "Record the matching Git trees for the LLVM 24 compiler pins",
+            "original": [
+              "3480e5d15efd44dc4e593d9b006832a58c79fd6a"
+            ]
+          },
+          {
+            "sha": "eb6bb956006b93bb019d47e8ff94cee7ef762ab1",
+            "title": "Pin the compiler with the split reverse rule mapping fix",
+            "original": [
+              "eb6bb956006b93bb019d47e8ff94cee7ef762ab1"
+            ]
+          },
+          {
+            "sha": "0ba8241ef8e39cac4cd6b98768c7cba20f07c843",
+            "title": "Select the upstream-compatible CPU LU lowering",
+            "original": [
+              "0ba8241ef8e39cac4cd6b98768c7cba20f07c843"
+            ]
+          },
+          {
+            "sha": "e7dacdb31dc64c930daa6a717d5c0b9a9ce1461f",
+            "title": "Select the compiler with relocatable lit tools",
+            "original": [
+              "e7dacdb31dc64c930daa6a717d5c0b9a9ce1461f"
+            ]
+          },
+          {
+            "sha": "5ec7602b97ecea05cd4c13a879521c334d4f0d47",
+            "title": "Pin the higher-order, triangular solve and SVD compiler fixes",
+            "original": [
+              "5ec7602b97ecea05cd4c13a879521c334d4f0d47"
+            ]
+          },
+          {
+            "sha": "8534f078036e591ac7859c549335790bc13370da",
+            "title": "Select the compiler with verified nested authored derivatives",
+            "original": [
+              "8534f078036e591ac7859c549335790bc13370da"
+            ]
+          },
+          {
+            "sha": "05a349a5dcf68b00e3d91b543ea7742a4c30c268",
+            "title": "Pin the guarded batch differentiation changes",
+            "original": [
+              "05a349a5dcf68b00e3d91b543ea7742a4c30c268"
+            ]
+          },
+          {
+            "sha": "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181",
+            "title": "Select the verified batched padding fixture revision",
+            "original": [
+              "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181"
+            ]
+          }
+        ],
+        "why_together": "The Bazel pin selects the compiler for this build. The manifest records both compiler commits and their matching trees."
+      },
+      "requires": [
+        {
+          "name": "Enzyme source",
+          "repo": "nsiccha/Enzyme",
+          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "why": "The opt-in Reactant stack selects this compiler revision."
+        },
+        {
+          "name": "Enzyme-JAX source",
+          "repo": "nsiccha/Enzyme-JAX",
+          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "why": "The opt-in Reactant stack selects this compiler revision."
+        }
+      ],
+      "validation": [
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "test/core/bcast_type_casts.jl",
+            "test/core/condition_loop_effects.jl",
+            "test/core/control_flow_scopes.jl",
+            "test/core/indexing.jl",
+            "test/core/integer_indices.jl",
+            "test/core/lazy_control_flow.jl",
+            "test/core/rank_zero_reduction.jl",
+            "test/core/retained_loops.jl",
+            "test/core/trace_index_sentinels.jl",
+            "test/core/view_scalar_indices.jl",
+            "test/core/wrapped_arrays.jl",
+            "test/integration/branch_closures.jl",
+            "test/integration/branch_host_arrays.jl",
+            "test/integration/condition_loop_reverse.jl",
+            "test/integration/integer_shifts.jl",
+            "test/integration/linear_algebra.jl",
+            "test/integration/mpi.jl",
+            "test/integration/real_factorization_reverse.jl",
+            "test/integration/retained_loop_growth.jl",
+            "test/integration/retained_static_exp.jl",
+            "test/integration/retained_static_power.jl",
+            "test/integration/scalar_stack.jl",
+            "test/integration/special_functions.jl",
+            "test/integration/static_matrix_exp.jl",
+            "test/integration/static_tensor_products.jl"
+          ],
+          "native_build": "0d0d447ce7293e90d93cb7447bdba71d500dae4a0826a64269ebf6c13859fa41",
+          "result": "passed",
+          "detail": "Reactant c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181 passed the upstream CPU MPI suite on both ranks. Reactant 05a349a5dcf68b00e3d91b543ea7742a4c30c268 passed all 24 affected CPU files (2820 assertions), compiled and native reverse gradients, ten Enzyme.jl repair capabilities and compilation thread-pool reuse. The final pin updates produced a byte-identical shared library.",
+          "julia": "1.12.7",
+          "bounds": "default"
+        },
+        {
+          "result": "passed",
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "tests": [
+            "deps/ReactantExtra/WORKSPACE",
+            "contrib/dogfood/stack.json"
+          ],
+          "native_build": "d7da89f37bfe63b4b1429cac0165261275d42ccb",
+          "detail": "The upstream MPI and NCCL merge leaves the compiler build inputs byte-identical to the linked configuration. Its manifest identifies both compiler Git trees."
+        },
+        {
+          "result": "passed",
+          "base": "3480e5d15efd44dc4e593d9b006832a58c79fd6a",
+          "tests": [
+            "contrib/dogfood/stack.json",
+            "deps/ReactantExtra/WORKSPACE"
+          ],
+          "detail": "The Bazel compiler pins and their manifest Git tree hashes match the selected Enzyme-JAX and Enzyme revisions. All Julia frontend and test files are byte-identical to the preceding Julia 1.10 release-library run."
+        },
+        {
+          "base": "082d70e53e7122a673542f2688d34aeb93f31504",
+          "tests": [
+            "contrib/dogfood/stack.json",
+            "deps/ReactantExtra/WORKSPACE"
+          ],
+          "result": "passed",
+          "detail": "The Enzyme and Enzyme-JAX commit pins match the build inputs. Each Git tree hash in the manifest matches its recorded commit. Only the two corrected hashes changed after the compiler build started."
         }
       ]
     }
