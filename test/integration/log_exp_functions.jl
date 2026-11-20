@@ -1,4 +1,5 @@
 using LogExpFunctions, Reactant, Test
+using Enzyme: Enzyme, Reverse
 
 @testset "xlogx" begin
     @test LogExpFunctions.xlogx(0.0) ≈ @jit(LogExpFunctions.xlogx(ConcreteRNumber(0.0))) atol =
@@ -222,6 +223,24 @@ end
     @test LogExpFunctions.logaddexp(1.0f0, 2.0f0) ≈
         @jit(LogExpFunctions.logaddexp(ConcreteRNumber(1.0f0), ConcreteRNumber(2.0f0))) atol =
         1e-3 rtol = 1e-3
+end
+
+@testset "logaddexp derivatives at ties" begin
+    # The gradient of log(exp(x) + exp(y)) is (1/2, 1/2) wherever x == y.
+    x = Reactant.to_rarray([0.0, 1.3, -40.0])
+    y = Reactant.to_rarray([0.0, 1.3, -40.0])
+    pairwise(x, y) = sum(LogExpFunctions.logaddexp.(x, y))
+    gx, gy = @jit Enzyme.gradient(Reverse, pairwise, x, y)
+    @test Array(gx) ≈ fill(0.5, 3)
+    @test Array(gy) ≈ fill(0.5, 3)
+    # log(2cosh(z)) has derivative tanh(z), which vanishes at z = 0.
+    symmetric(z) = sum(LogExpFunctions.logaddexp.(z, .-z))
+    g = only(@jit Enzyme.gradient(Reverse, symmetric, Reactant.to_rarray([0.0, 0.3])))
+    @test Array(g) ≈ [0.0, tanh(0.3)] atol = 1e-12
+    # Infinite ties keep their values.
+    @test @jit(LogExpFunctions.logaddexp(ConcreteRNumber(Inf), ConcreteRNumber(Inf))) == Inf
+    @test @jit(LogExpFunctions.logaddexp(ConcreteRNumber(-Inf), ConcreteRNumber(-Inf))) ==
+        -Inf
 end
 
 @testset "logsubexp" begin

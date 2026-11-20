@@ -79,9 +79,11 @@ end
 
 # logaddexp: log(exp(x) + exp(y))
 function LogExpFunctions.logaddexp(x::TracedRNumber{<:Real}, y::TracedRNumber{<:Real})
-    # Compute max and diff in a branchless way
+    # Compute max and diff in a branchless way. Replacing only a `NaN` difference
+    # (`x = y = ±Inf`) keeps the derivative at finite ties, as LogExpFunctions does.
     a_lt_b = x < y
-    diff = ifelse(a_lt_b, x - y, ifelse(x == y, zero(x - y), y - x))
+    d = y - x
+    diff = ifelse(a_lt_b, x - y, ifelse(isnan(d), zero(d), d))
     max_val = ifelse(a_lt_b, y, ifelse(!isnan(y), x, y))
     return max_val + LogExpFunctions.log1pexp(diff)
 end
