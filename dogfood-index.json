@@ -3,14 +3,14 @@
   "line": {
     "repo": "nsiccha/Reactant.jl",
     "ref": "dogfood",
-    "sha": "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181"
+    "sha": "83eb4b0aec381a3233369704ed4396010443edb1"
   },
   "upstream": {
     "repo": "EnzymeAD/Reactant.jl",
     "ref": "main",
     "sha": "1a43717b26c1f475c65218d4d7a41eb61ceb182a"
   },
-  "prepared_at": "2026-11-19T03:35:26+00:00",
+  "prepared_at": "2026-11-20T09:22:51+00:00",
   "problems": [
     {
       "id": "view-scalar-index",
@@ -2101,6 +2101,45 @@
           ],
           "result": "passed",
           "detail": "The Enzyme and Enzyme-JAX commit pins match the build inputs. Each Git tree hash in the manifest matches its recorded commit. Only the two corrected hashes changed after the compiler build started."
+        }
+      ]
+    },
+    {
+      "id": "logaddexp-finite-ties",
+      "role": "fix",
+      "title": "Compiled reverse differentiation assigns the full logaddexp gradient to one input at finite ties",
+      "summary": "When x and y are equal and finite, the two partial derivatives of logaddexp(x, y) should both be one half. Keeping the difference between the inputs in the finite branch restores the correct derivatives while preserving the values at infinite ties.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/nsiccha/ReactiveKernels.jl/issues/41",
+          "relation": "reports"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "83eb4b0aec381a3233369704ed4396010443edb1",
+            "title": "Preserve traced logaddexp derivatives at finite ties",
+            "original": [
+              "83eb4b0aec381a3233369704ed4396010443edb1"
+            ]
+          }
+        ],
+        "why_together": "One commit changes the primal expression and adds an automatic differentiation regression."
+      },
+      "depends_on": [],
+      "requires": [],
+      "validation": [
+        {
+          "base": "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181",
+          "julia": "1.12.7",
+          "tests": [
+            "test/integration/log_exp_functions.jl"
+          ],
+          "result": "passed",
+          "detail": "All 115 assertions passed with the released CPU runtime Reactant_jll 0.0.446+0. The five new regression checks cover both input gradients at three finite ties, the symmetric composition and both infinite-tie values."
         }
       ]
     }
