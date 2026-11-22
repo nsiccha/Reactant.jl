@@ -3,14 +3,14 @@
   "line": {
     "repo": "nsiccha/Reactant.jl",
     "ref": "dogfood",
-    "sha": "83eb4b0aec381a3233369704ed4396010443edb1"
+    "sha": "34a22a146b57c8d1aa60fdb7ce39056ac3893e91"
   },
   "upstream": {
     "repo": "EnzymeAD/Reactant.jl",
     "ref": "main",
     "sha": "1a43717b26c1f475c65218d4d7a41eb61ceb182a"
   },
-  "prepared_at": "2026-11-20T09:22:51+00:00",
+  "prepared_at": "2026-11-22T05:46:05+00:00",
   "problems": [
     {
       "id": "view-scalar-index",
@@ -54,19 +54,19 @@
         {
           "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "sha": "09f4483f63f8a730e227e25040f425c9252bfbd5",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -229,19 +229,19 @@
         {
           "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "sha": "09f4483f63f8a730e227e25040f425c9252bfbd5",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -402,19 +402,19 @@
         {
           "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "sha": "09f4483f63f8a730e227e25040f425c9252bfbd5",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -577,19 +577,19 @@
         {
           "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "sha": "09f4483f63f8a730e227e25040f425c9252bfbd5",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -706,6 +706,16 @@
           "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
           "result": "passed",
           "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 202 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ]
     },
@@ -1157,6 +1167,36 @@
           "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
           "result": "passed",
           "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 26 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/control_flow_scopes.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 82 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/condition_loop_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 36 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/real_factorization_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ],
       "requires": [
@@ -1169,13 +1209,13 @@
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -1296,13 +1336,23 @@
           "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
           "result": "failed",
           "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 133 passes, 21 failures and 0 errors. Loop inventory and retained-invariant checks failed."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 154 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ],
       "requires": [
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         }
       ],
@@ -1389,6 +1439,16 @@
           "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
           "result": "failed",
           "detail": "Released Reactant_jll 0.0.446+0 CPU library, Reactant 58b846dd27cdf04b1f7f57a93bc22c2b7bf0f520 and Enzyme.jl 01d65bc18c4053a630969fe03a55e85221263063. Julia reported 45 passes, 0 failures and 2 errors. Two Bessel reverse compilations failed MLIR verification because a cached operand did not dominate its use."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 70 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ],
       "requires": [],
@@ -1796,7 +1856,7 @@
         {
           "name": "Enzyme.jl source",
           "repo": "nsiccha/Enzyme.jl",
-          "sha": "962fc64cd49008a6665ee95204395d41f63ef3dc",
+          "sha": "b862f996659d1872200d7c23345840282edf1855",
           "why": "Selected in Reactant’s compiler stack manifest."
         }
       ],
@@ -1942,6 +2002,26 @@
           "native_build": "libReactantExtra sha256 610ab3e99b9d0835f56755daf8a90fc0b55d2795b8b9e81035f8b7c028599659",
           "result": "passed",
           "detail": "Reactant 082d70e53e7122a673542f2688d34aeb93f31504 and Enzyme.jl 962fc64cd49008a6665ee95204395d41f63ef3dc ran with the released CPU JLL 0.0.446+0."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 26 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/control_flow_scopes.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 202 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ],
       "requires": [],
@@ -2020,6 +2100,20 @@
             "original": [
               "c3ff2bdbc40e75b414b9b7ea22ae77383f0ae181"
             ]
+          },
+          {
+            "sha": "0db5a2fa0e1eb5d337c81ffc504cb296b0e93c56",
+            "original": [
+              "0db5a2fa0e1eb5d337c81ffc504cb296b0e93c56"
+            ],
+            "title": "Refresh the compiler and Julia pins for the November 21 CPU stack"
+          },
+          {
+            "sha": "34a22a146b57c8d1aa60fdb7ce39056ac3893e91",
+            "original": [
+              "34a22a146b57c8d1aa60fdb7ce39056ac3893e91"
+            ],
+            "title": "Pin the compiler with reverse mode for data-dependent while loops"
           }
         ],
         "why_together": "The Bazel pin selects the compiler for this build. The manifest records both compiler commits and their matching trees."
@@ -2028,13 +2122,13 @@
         {
           "name": "Enzyme source",
           "repo": "nsiccha/Enzyme",
-          "sha": "68a07ff37d599682474dfda7e2fc324620e690d2",
+          "sha": "09f4483f63f8a730e227e25040f425c9252bfbd5",
           "why": "The opt-in Reactant stack selects this compiler revision."
         },
         {
           "name": "Enzyme-JAX source",
           "repo": "nsiccha/Enzyme-JAX",
-          "sha": "b933d2ec9957c870ea152d16ec0cc48b208a9964",
+          "sha": "050e7e59da4d1a55008c57fd69c5b6680638cc88",
           "why": "The opt-in Reactant stack selects this compiler revision."
         }
       ],
@@ -2101,6 +2195,76 @@
           ],
           "result": "passed",
           "detail": "The Enzyme and Enzyme-JAX commit pins match the build inputs. Each Git tree hash in the manifest matches its recorded commit. Only the two corrected hashes changed after the compiler build started."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 154 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/retained_loops.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 26 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/control_flow_scopes.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 202 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 82 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/condition_loop_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 70 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 36 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/real_factorization_reverse.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "The manifest commit and tree IDs match the checkout and the actual build input receipts. Bazel built the CPU library with Enzyme-JAX 050e7e59da4d1a55008c57fd69c5b6680638cc88 and Enzyme 09f4483f63f8a730e227e25040f425c9252bfbd5.",
+          "tests": [
+            "contrib/dogfood/stack.json",
+            "deps/ReactantExtra/WORKSPACE"
+          ],
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ]
     },
@@ -2140,6 +2304,16 @@
           ],
           "result": "passed",
           "detail": "All 115 assertions passed with the released CPU runtime Reactant_jll 0.0.446+0. The five new regression checks cover both input gradients at three finite ties, the symmetric composition and both infinite-tie values."
+        },
+        {
+          "base": "1a43717b26c1f475c65218d4d7a41eb61ceb182a",
+          "result": "passed",
+          "detail": "Reactant 34a22a146b57 with Enzyme-JAX 050e7e59da4d, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 115 assertions passed, 0 failed, 0 errored and 0 were marked broken.",
+          "tests": [
+            "test/integration/log_exp_functions.jl"
+          ],
+          "julia": "1.12.7",
+          "native_build": "698b76042a44ec9093f358b5671f35e16a56fac66a879f0b158763f216652aaa"
         }
       ]
     }
