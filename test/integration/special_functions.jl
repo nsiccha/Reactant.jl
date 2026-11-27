@@ -256,3 +256,14 @@ end
     end
     @test structures[1] == structures[2]
 end
+
+@testset "besselix with an integer order held as a floating-point number" begin
+    for T in (Float32, Float64)
+        tolerance = T === Float32 ? 2.0f-5 : 2e-12
+        for order in (0.0, 1.0, 2.0, 4.0f0, 8.0), argument in T[0.1, 1.5625, 16, 100]
+            @test T(@jit SpecialFunctions.besselix(order, ConcreteRNumber(argument))) ≈
+                T(SpecialFunctions.besselix(order, argument)) rtol = tolerance
+        end
+    end
+    @test_throws ArgumentError @jit SpecialFunctions.besselix(1.5, ConcreteRNumber(1.0))
+end

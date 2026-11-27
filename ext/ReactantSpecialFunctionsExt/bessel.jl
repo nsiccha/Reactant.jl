@@ -132,3 +132,17 @@ function SpecialFunctions.besselix(
 ) where {T<:Union{Float32,Float64}}
     return _besselix_integer(n, x)
 end
+
+# A caller may hold integer orders as floating-point numbers (harmonic numbers
+# of a periodic kernel). The expansions above are for integer orders, so a
+# non-integer order is refused instead of silently truncated.
+function SpecialFunctions.besselix(
+    n::AbstractFloat, x::TracedRNumber{T}
+) where {T<:Union{Float32,Float64}}
+    isinteger(n) || throw(
+        ArgumentError(
+            "besselix with a traced argument supports integer orders only, got order $n"
+        ),
+    )
+    return _besselix_integer(Int(n), x)
+end
