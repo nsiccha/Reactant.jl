@@ -697,7 +697,9 @@ function _setindex_scalar_cartesian!(
             @opcall(
                 dynamic_update_slice(
                     a,
-                    Reactant.broadcast_to_size(T(v), ntuple(Returns(1), N)),
+                    Reactant.broadcast_to_size(
+                        TracedUtils.promote_to(TracedRNumber{T}, v), ntuple(Returns(1), N)
+                    ),
                     collect(Int64, index.I),
                 )
             ),

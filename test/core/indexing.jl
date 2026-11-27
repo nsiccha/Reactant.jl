@@ -643,3 +643,27 @@ index_plain_mat_linear(idx) = @allowscalar reshape(collect(1.0:10.0), 2, 5)[idx]
     @test @jit(index_plain_mat_linear(Reactant.to_rarray([2, 4, 7]))) ≈ [2.0, 4.0, 7.0]
     @test @jit(index_plain_mat_linear(ConcreteRNumber(5))) ≈ 5.0
 end
+
+function store_scalars_at_cartesian_indices(x)
+    out = similar(x)
+    for I in CartesianIndices(x)
+        out[I] = 2 * x[I]
+    end
+    return out
+end
+
+@testset "scalar setindex! at a CartesianIndex" begin
+    x = Reactant.to_rarray([1.0, 2.0, 3.0])
+    @test Reactant.@allowscalar(@jit(store_scalars_at_cartesian_indices(x))) ≈
+        [2.0, 4.0, 6.0]
+    m = Reactant.to_rarray([1.0 2.0; 3.0 4.0])
+    @test Reactant.@allowscalar(@jit(store_scalars_at_cartesian_indices(m))) ≈
+        [2.0 4.0; 6.0 8.0]
+    # a stored value of another number type is converted to the element type
+    function store_integer(x)
+        out = copy(x)
+        out[CartesianIndex(2)] = 7
+        return out
+    end
+    @test Reactant.@allowscalar(@jit(store_integer(x))) ≈ [1.0, 7.0, 3.0]
+end
