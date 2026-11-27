@@ -3,14 +3,14 @@
   "line": {
     "repo": "nsiccha/Reactant.jl",
     "ref": "dogfood",
-    "sha": "e6bae69537a90b21f680978b1bef37e4e4016a98"
+    "sha": "1cb8e0e0f69281dffa029ada682746187896179a"
   },
   "upstream": {
     "repo": "EnzymeAD/Reactant.jl",
     "ref": "main",
     "sha": "1a43717b26c1f475c65218d4d7a41eb61ceb182a"
   },
-  "prepared_at": "2026-11-22T09:30:21+00:00",
+  "prepared_at": "2026-11-27T22:37:42+00:00",
   "problems": [
     {
       "id": "view-scalar-index",
@@ -2480,6 +2480,123 @@
             "test/integration/log_exp_functions.jl"
           ],
           "julia": "1.12.7",
+          "native_build": "0c6893a6525982a84a403a3a334e3f7fe5989c2e0e9472315cb555cdfc0f1a37"
+        }
+      ]
+    },
+    {
+      "id": "unbounded-vararg-held-type",
+      "role": "fix",
+      "title": "A callable that holds a value of an open-ended tuple type cannot be compiled",
+      "summary": "Compiling a callable maps the type of every value it holds. A type with an unbounded Vararg parameter, such as Vector{Tuple{Vararg{Symbol}}}, raised UndefRefError before tracing started. The element type and the length of a Vararg are now read only when they are set.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3406",
+          "relation": "related"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "2271e56cafc3c275749f1519d476299028f4834f",
+            "title": "Trace types with an unbounded Vararg parameter",
+            "original": [
+              "2271e56cafc3c275749f1519d476299028f4834f"
+            ]
+          }
+        ],
+        "why_together": "One commit changes the type mapping and adds its regression."
+      },
+      "depends_on": [],
+      "requires": [],
+      "validation": [
+        {
+          "base": "e6bae69537a90b21f680978b1bef37e4e4016a98",
+          "julia": "1.10.12",
+          "tests": [
+            "test/core/tracing.jl"
+          ],
+          "result": "passed",
+          "detail": "Reactant 1cb8e0e0f692 with Enzyme-JAX 90f3d7c1ae35, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 237 assertions passed, 0 failed, 0 errored and 0 were marked broken. Four of them are new.",
+          "native_build": "0c6893a6525982a84a403a3a334e3f7fe5989c2e0e9472315cb555cdfc0f1a37"
+        }
+      ]
+    },
+    {
+      "id": "cartesian-scalar-store",
+      "role": "fix",
+      "title": "Storing a traced scalar at a CartesianIndex fails during compilation",
+      "summary": "setindex! of a traced array at a CartesianIndex converted the stored value with the plain element type, which has no constructor from a traced number, so a loop over CartesianIndices that writes one element per step could not be compiled. The value is now promoted to the traced element type, as at an integer index.",
+      "repairs": [],
+      "upstream_refs": [],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "4d3e8c7f8da60766f54c7270266cf50d4c98e1c8",
+            "title": "Store a traced scalar at a CartesianIndex",
+            "original": [
+              "4d3e8c7f8da60766f54c7270266cf50d4c98e1c8"
+            ]
+          }
+        ],
+        "why_together": "One commit changes the store and adds its regression."
+      },
+      "depends_on": [],
+      "requires": [],
+      "validation": [
+        {
+          "base": "e6bae69537a90b21f680978b1bef37e4e4016a98",
+          "julia": "1.10.12",
+          "tests": [
+            "test/core/indexing.jl"
+          ],
+          "result": "passed",
+          "detail": "Reactant 1cb8e0e0f692 with Enzyme-JAX 90f3d7c1ae35, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 205 assertions passed, 0 failed, 0 errored and 0 were marked broken. Three of them are new.",
+          "native_build": "0c6893a6525982a84a403a3a334e3f7fe5989c2e0e9472315cb555cdfc0f1a37"
+        }
+      ]
+    },
+    {
+      "id": "besselix-float-order",
+      "role": "fix",
+      "title": "Scaled Bessel I rejects an integer order held as a floating-point number",
+      "summary": "A periodic kernel often stores its harmonic numbers as floating-point values. besselix with such an order and a traced argument had no method. Integer-valued floating-point orders now use the integer-order expansions, and a non-integer order is refused with an ArgumentError.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/EnzymeAD/Reactant.jl/pull/3380",
+          "relation": "related"
+        }
+      ],
+      "fix": {
+        "branch": "dogfood",
+        "commits": [
+          {
+            "sha": "1cb8e0e0f69281dffa029ada682746187896179a",
+            "title": "Accept an integer besselix order held as a floating-point number",
+            "original": [
+              "1cb8e0e0f69281dffa029ada682746187896179a"
+            ]
+          }
+        ],
+        "why_together": "One commit adds the method and its regression."
+      },
+      "depends_on": [
+        "integer-besselix"
+      ],
+      "requires": [],
+      "validation": [
+        {
+          "base": "e6bae69537a90b21f680978b1bef37e4e4016a98",
+          "julia": "1.10.12",
+          "tests": [
+            "test/integration/special_functions.jl"
+          ],
+          "result": "passed",
+          "detail": "Reactant 1cb8e0e0f692 with Enzyme-JAX 90f3d7c1ae35, compiled Enzyme 09f4483f63f8 and Enzyme.jl b862f996659d. 111 assertions passed, 0 failed, 0 errored and 0 were marked broken. 41 of them are new.",
           "native_build": "0c6893a6525982a84a403a3a334e3f7fe5989c2e0e9472315cb555cdfc0f1a37"
         }
       ]
