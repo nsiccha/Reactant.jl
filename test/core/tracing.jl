@@ -560,3 +560,38 @@ reflect_hasfield(x) = x .+ hasfield(KindOptions, :a)
     @test @jit(reflect_parentmodule(x)) ≈ [1.0 + length(string(@__MODULE__))]
     @test @jit(reflect_hasfield(x)) ≈ [2.0]
 end
+
+struct CallableWithUnboundedTuples{F}
+    f::F
+    names::Vector{Tuple{Vararg{Symbol}}}
+end
+(c::CallableWithUnboundedTuples)(x) = c.f(x)
+
+@testset "unbounded Vararg in a held value's type" begin
+    # `Tuple{Vararg{Symbol}}` has a Vararg parameter without a length, and a
+    # bare `Vararg` has no element type either.
+    @test traced_type(
+        Vector{Tuple{Vararg{Symbol}}},
+        Val(ConcreteToTraced),
+        Union{},
+        Reactant.Sharding.NoSharding(),
+        Val(:PJRT),
+    ) == Vector{Tuple{Vararg{Symbol}}}
+    @test traced_type(
+        Tuple{Int,Vararg{Float64}},
+        Val(ConcreteToTraced),
+        Union{},
+        Reactant.Sharding.NoSharding(),
+        Val(:PJRT),
+    ) == Tuple{Int,Vararg{Float64}}
+    @test traced_type(
+        Tuple{Vararg{Float64,2}},
+        Val(ConcreteToTraced),
+        Union{},
+        Reactant.Sharding.NoSharding(),
+        Val(:PJRT),
+    ) == Tuple{Float64,Float64}
+    held = CallableWithUnboundedTuples(x -> sum(abs2, x), Tuple{Vararg{Symbol}}[(:a, :b), (:c,)])
+    x = Reactant.to_rarray([1.0, 2.0, 3.0])
+    @test @jit(held(x)) ≈ 14.0
+end

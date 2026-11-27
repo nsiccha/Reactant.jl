@@ -139,7 +139,10 @@ Base.@nospecializeinfer function traced_type_inner(
     @nospecialize(ndevices),
     @nospecialize(runtime)
 )
-    return Vararg{traced_type_inner(T.T, seen, mode, track_numbers, ndevices, runtime),T.N}
+    # `Vararg` has no element type and `Vararg{T}` no length: read each only when set.
+    isdefined(T, :T) || return T
+    inner = traced_type_inner(T.T, seen, mode, track_numbers, ndevices, runtime)
+    return isdefined(T, :N) ? Vararg{inner,T.N} : Vararg{inner}
 end
 
 Base.@nospecializeinfer function traced_type_inner(
